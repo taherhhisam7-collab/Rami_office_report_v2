@@ -8,11 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
-  Loader2, Search, X, Download, Filter, Calendar,
+  Loader2, Search, X, Download, Filter,
   ChevronRight, ChevronLeft, ChevronDown, Check,
   ArrowUp, ArrowDown, ArrowUpDown, SlidersHorizontal,
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ===== أنواع الفترات الزمنية =====
 type Period = "all" | "today" | "yesterday" | "week" | "last_week" | "month" | "last_month" | "quarter" | "year" | "custom";
@@ -36,9 +35,6 @@ const ARABIC_MONTHS_REC: Record<number, string> = {
   1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل", 5: "مايو", 6: "يونيو",
   7: "يوليو", 8: "أغسطس", 9: "سبتمبر", 10: "أكتوبر", 11: "نوفمبر", 12: "ديسمبر",
 };
-const ARABIC_MONTHS_LIST = Object.entries(ARABIC_MONTHS_REC).map(([v, label]) => ({ value: Number(v), label }));
-const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
-
 function getPeriodRange(period: Period, customStart?: string, customEnd?: string): { startTs?: number; endTs?: number; month?: string } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -351,11 +347,6 @@ export default function Records() {
   const [period, setPeriod] = useState<Period>("month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("current");
-  // فلتر الشهر والسنة واليوم المحاسبي
-  const [selMonth, setSelMonth] = useState<string>("all");
-  const [selYear, setSelYear] = useState<string>("all");
-  const [selDay, setSelDay] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 100;
@@ -375,17 +366,9 @@ export default function Records() {
 
   const { startTs, endTs, month: periodMonth } = useMemo(() => getPeriodRange(period, customStart, customEnd), [period, customStart, customEnd]);
 
-  // الشهر المحدد: إذا اختار المستخدم شهراً مخصصاً من القائمة يأخذ الأولوية، وإلا يستخدم periodMonth
-  const resolvedMonth = selectedMonth !== "current" ? selectedMonth : periodMonth;
+  const resolvedMonth = periodMonth;
   // resolvedMonthYear: الشكل الجديد "شهر-سنة" للإرسال للخادم
   const resolvedMonthYear = useMemo(() => {
-    // فلتر الشهر+سنة المحاسبي يأخذ الأولوية
-    if (selMonth !== "all" && selYear !== "all") {
-      const mName = ARABIC_MONTHS_REC[Number(selMonth)];
-      return mName ? `${mName}-${selYear}` : undefined;
-    }
-    // لو اختار سنة فقط بدون شهر
-    if (selYear !== "all" && selMonth === "all") return undefined;
     if (startTs || endTs) return undefined; // فترة مخصصة — لا نرسل monthYear
     if (!resolvedMonth) return undefined;
     const now = new Date();
@@ -394,38 +377,16 @@ export default function Records() {
     if (!mNum) return undefined;
     const year = mNum > (now.getMonth() + 1) ? now.getFullYear() - 1 : now.getFullYear();
     return `${resolvedMonth}-${year}`;
-  }, [selMonth, selYear, resolvedMonth, startTs, endTs]);
-
-  // حساب startTs/endTs من الفلتر المحاسبي (يوم+شهر+سنة) إذا كان نشطاً
-  const accountingTs = useMemo(() => {
-    if (selYear === "all" && selMonth === "all" && selDay === "all") return {};
-    const year = selYear !== "all" ? Number(selYear) : new Date().getFullYear();
-    const month = selMonth !== "all" ? Number(selMonth) - 1 : 0;
-    const monthEnd = selMonth !== "all" ? Number(selMonth) - 1 : 11;
-    if (selDay !== "all") {
-      const day = Number(selDay);
-      const m = selMonth !== "all" ? Number(selMonth) - 1 : new Date().getMonth();
-      const start = new Date(Date.UTC(year, m, day));
-      const end = new Date(Date.UTC(year, m, day, 23, 59, 59, 999));
-      return { startTs: start.getTime(), endTs: end.getTime() };
-    }
-    if (selMonth !== "all" && selYear !== "all") return {}; // يُعالج بـ monthYear
-    if (selYear !== "all") {
-      const start = new Date(Date.UTC(year, 0, 1));
-      const end = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
-      return { startTs: start.getTime(), endTs: end.getTime() };
-    }
-    return {};
-  }, [selYear, selMonth, selDay]);
+  }, [resolvedMonth, startTs, endTs]);
 
   const queryInput = useMemo(() => ({
-    startTs: accountingTs.startTs ?? startTs,
-    endTs: accountingTs.endTs ?? endTs,
+    startTs,
+    endTs,
     branch: colBranch !== "all" ? colBranch : undefined,
     paymentMethod: colPayment !== "all" ? colPayment : undefined,
     employee: colEmployee !== "all" ? colEmployee : undefined,
     service: colService !== "all" ? colService : undefined,
-    monthYear: (accountingTs.startTs || accountingTs.endTs) ? undefined : resolvedMonthYear,
+    monthYear: resolvedMonthYear,
     search: search || undefined,
     receiptNoFilter: colReceiptNo.trim() || undefined,
     customerFilter: colCustomer.trim() || undefined,
@@ -433,7 +394,7 @@ export default function Records() {
     amountMax: colAmountMax !== "" ? parseFloat(colAmountMax) : undefined,
     page,
     pageSize: PAGE_SIZE,
-  }), [startTs, endTs, colBranch, colPayment, colEmployee, colService, resolvedMonth, search, colReceiptNo, colCustomer, colAmountMin, colAmountMax, page]);
+  }), [startTs, endTs, colBranch, colPayment, colEmployee, colService, resolvedMonthYear, search, colReceiptNo, colCustomer, colAmountMin, colAmountMax, page]);
 
   const { data: rawData, isLoading, error } = trpc.sheets.records.useQuery(queryInput);
   const { data: filterOpts } = trpc.sheets.filterOptions.useQuery({ monthYear: resolvedMonthYear });
@@ -457,14 +418,12 @@ export default function Records() {
     || [colBranch, colService, colPayment, colEmployee].some((v) => v !== "all");
 
   const topFiltersActive = [
-    period !== "month", selectedMonth !== "current", !!search,
-    selDay !== "all", selMonth !== "all", selYear !== "all",
+    period !== "month", !!search,
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
     setPeriod("month"); setCustomStart(""); setCustomEnd("");
-    setSelectedMonth("current"); setSearch(""); setPage(1);
-    setSelDay("all"); setSelMonth("all"); setSelYear("all");
+    setSearch(""); setPage(1);
     setColReceiptNo(""); setColBranch("all"); setColCustomer("");
     setColService("all"); setColPayment("all"); setColEmployee("all");
     setColAmountMin(""); setColAmountMax("");
@@ -528,82 +487,26 @@ export default function Records() {
                 </button>
               ))}
             </div>
-            {period === "custom" && (
-              <div className="flex items-center gap-3 mt-3">
-                <div className="flex-1">
-                  <label className="text-xs text-muted-foreground mb-1 block">من تاريخ</label>
-                  <Input type="date" value={customStart} onChange={(e) => { setCustomStart(e.target.value); resetPage(); }} className="bg-background" />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs text-muted-foreground mb-1 block">إلى تاريخ</label>
-                  <Input type="date" value={customEnd} onChange={(e) => { setCustomEnd(e.target.value); resetPage(); }} className="bg-background" />
-                </div>
+            <div className="flex flex-col sm:flex-row gap-3 mt-3">
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">من تاريخ</label>
+                <Input
+                  type="date"
+                  value={customStart}
+                  onChange={(e) => { setCustomStart(e.target.value); setPeriod("custom"); resetPage(); }}
+                  className="bg-background"
+                />
               </div>
-            )}
-          </div>
-
-          {/* فلتر اليوم والشهر والسنة (محاسبي) */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground font-medium">اليوم:</span>
-              <Select
-                value={selDay}
-                onValueChange={(v) => { setSelDay(v); setPeriod("all"); resetPage(); }}
-              >
-                <SelectTrigger className="w-24 h-9 bg-background">
-                  <SelectValue placeholder="اليوم" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل</SelectItem>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <SelectItem key={d} value={String(d)}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">إلى تاريخ</label>
+                <Input
+                  type="date"
+                  value={customEnd}
+                  onChange={(e) => { setCustomEnd(e.target.value); setPeriod("custom"); resetPage(); }}
+                  className="bg-background"
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground font-medium">الشهر:</span>
-              <Select
-                value={selMonth}
-                onValueChange={(v) => { setSelMonth(v); setSelYear(selYear !== "all" ? selYear : String(new Date().getFullYear())); setPeriod("all"); resetPage(); }}
-              >
-                <SelectTrigger className="w-36 h-9 bg-background">
-                  <SelectValue placeholder="اختر الشهر" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل الشهور</SelectItem>
-                  {ARABIC_MONTHS_LIST.map((m) => (
-                    <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground font-medium">السنة:</span>
-              <Select
-                value={selYear}
-                onValueChange={(v) => { setSelYear(v); setPeriod("all"); resetPage(); }}
-              >
-                <SelectTrigger className="w-28 h-9 bg-background">
-                  <SelectValue placeholder="اختر السنة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل السنوات</SelectItem>
-                  {YEAR_OPTIONS.map((y) => (
-                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {(selMonth !== "all" || selYear !== "all" || selDay !== "all") && (
-              <button
-                onClick={() => { setSelMonth("all"); setSelYear("all"); setSelDay("all"); resetPage(); }}
-                className="text-xs text-destructive hover:text-destructive flex items-center gap-1"
-              >
-                <X className="h-3.5 w-3.5" /> مسح
-              </button>
-            )}
           </div>
 
           {/* البحث النصي العام */}
