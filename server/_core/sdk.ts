@@ -24,6 +24,8 @@ export type SessionPayload = {
   name: string;
 };
 
+const LOCAL_SESSION_APP_ID = "branch-receipts-manager";
+
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
 const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
@@ -171,7 +173,7 @@ class SDKServer {
     return this.signSession(
       {
         openId,
-        appId: ENV.appId,
+        appId: ENV.appId || LOCAL_SESSION_APP_ID,
         name: options.name || "",
       },
       options
@@ -212,18 +214,14 @@ class SDKServer {
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (
-        !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
-      ) {
+      if (!isNonEmptyString(openId) || !isNonEmptyString(name)) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
 
       return {
         openId,
-        appId,
+        appId: isNonEmptyString(appId) ? appId : LOCAL_SESSION_APP_ID,
         name,
       };
     } catch (error) {
