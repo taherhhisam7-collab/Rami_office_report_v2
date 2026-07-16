@@ -1,0 +1,31 @@
+{
+  "name": "نظام إدارة سندات القبض",
+  "short_name": "سندات القبض",
+  "description": "نظام إدارة سندات القبض للفروع",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#1e1b4b",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/manus-storage/icon-192_5ceeade9.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/manus-storage/icon-512_55027d09.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/manus-storage/apple-touch-icon_16fdfd44.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1782287840510,
+      "tag": "0000_wise_kitty_pryde",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1782288707174,
+      "tag": "0001_harsh_owl",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1782300627658,
+      "tag": "0002_watery_may_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1782303880742,
+      "tag": "0003_lush_justin_hammer",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1782971552847,
+      "tag": "0004_bouncy_silver_surfer",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1782972899139,
+      "tag": "0005_aspiring_clint_barton",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `commission_rates` ADD `isGlobalManager` int DEFAULT 0 NOT NULL;
