@@ -41,14 +41,14 @@ function normalizeDateInput(value: string) {
     .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
     .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
   const digits = westernDigits.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 4) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 4)}/${digits.slice(4)}`;
-  return `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6)}`;
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
 function parseDateInput(value?: string) {
-  if (!value || !/^\d{4}[/-]\d{2}[/-]\d{2}$/.test(value)) return undefined;
-  const [year, month, day] = value.split(/[/-]/).map(Number);
+  if (!value || !/^\d{2}[/-]\d{2}[/-]\d{4}$/.test(value)) return undefined;
+  const [day, month, year] = value.split(/[/-]/).map(Number);
   const parsed = new Date(year, month - 1, day);
   if (
     parsed.getFullYear() !== year
@@ -522,7 +522,7 @@ export default function Records() {
                 <Input
                   type="text"
                   inputMode="numeric"
-                  placeholder="YYYY/MM/DD"
+                  placeholder="DD/MM/YYYY"
                   maxLength={10}
                   value={customStart}
                   onChange={(e) => { setCustomStart(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
@@ -534,7 +534,7 @@ export default function Records() {
                 <Input
                   type="text"
                   inputMode="numeric"
-                  placeholder="YYYY/MM/DD"
+                  placeholder="DD/MM/YYYY"
                   maxLength={10}
                   value={customEnd}
                   onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
