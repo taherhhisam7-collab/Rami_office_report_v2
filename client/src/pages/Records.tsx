@@ -35,6 +35,31 @@ const ARABIC_MONTHS_REC: Record<number, string> = {
   1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل", 5: "مايو", 6: "يونيو",
   7: "يوليو", 8: "أغسطس", 9: "سبتمبر", 10: "أكتوبر", 11: "نوفمبر", 12: "ديسمبر",
 };
+
+function normalizeDateInput(value: string) {
+  const westernDigits = value
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+  const digits = westernDigits.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+}
+
+function parseDateInput(value?: string) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year
+    || parsed.getMonth() !== month - 1
+    || parsed.getDate() !== day
+  ) {
+    return undefined;
+  }
+  return parsed;
+}
+
 function getPeriodRange(period: Period, customStart?: string, customEnd?: string): { startTs?: number; endTs?: number; month?: string } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -56,7 +81,11 @@ function getPeriodRange(period: Period, customStart?: string, customEnd?: string
     }
     case "quarter": { const q = Math.floor(now.getMonth() / 3); const start = new Date(now.getFullYear(), q * 3, 1); return { startTs: start.getTime(), endTs: endOfDay(today).getTime() }; }
     case "year": { const start = new Date(now.getFullYear(), 0, 1); return { startTs: start.getTime(), endTs: endOfDay(today).getTime() }; }
-    case "custom": { const startTs = customStart ? new Date(customStart).getTime() : undefined; const endTs = customEnd ? endOfDay(new Date(customEnd)).getTime() : undefined; return { startTs, endTs }; }
+    case "custom": {
+      const start = parseDateInput(customStart);
+      const end = parseDateInput(customEnd);
+      return { startTs: start?.getTime(), endTs: end ? endOfDay(end).getTime() : undefined };
+    }
     default: return {};
   }
 }
@@ -491,18 +520,24 @@ export default function Records() {
               <div className="flex-1">
                 <label className="text-xs text-muted-foreground mb-1 block">من تاريخ</label>
                 <Input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="YYYY-MM-DD"
+                  maxLength={10}
                   value={customStart}
-                  onChange={(e) => { setCustomStart(e.target.value); setPeriod("custom"); resetPage(); }}
+                  onChange={(e) => { setCustomStart(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
                   className="bg-background"
                 />
               </div>
               <div className="flex-1">
                 <label className="text-xs text-muted-foreground mb-1 block">إلى تاريخ</label>
                 <Input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="YYYY-MM-DD"
+                  maxLength={10}
                   value={customEnd}
-                  onChange={(e) => { setCustomEnd(e.target.value); setPeriod("custom"); resetPage(); }}
+                  onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
                   className="bg-background"
                 />
               </div>
