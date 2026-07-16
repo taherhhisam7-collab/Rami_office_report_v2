@@ -522,11 +522,12 @@ export default function Records() {
                 <Input
                   type="text"
                   inputMode="numeric"
+                  dir="ltr"
                   placeholder="DD/MM/YYYY"
                   maxLength={10}
                   value={customStart}
                   onChange={(e) => { setCustomStart(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                  className="bg-background"
+                  className="bg-background text-left"
                 />
               </div>
               <div className="flex-1">
@@ -534,11 +535,12 @@ export default function Records() {
                 <Input
                   type="text"
                   inputMode="numeric"
+                  dir="ltr"
                   placeholder="DD/MM/YYYY"
                   maxLength={10}
                   value={customEnd}
                   onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                  className="bg-background"
+                  className="bg-background text-left"
                 />
               </div>
             </div>
