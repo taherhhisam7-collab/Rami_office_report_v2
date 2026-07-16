@@ -201,7 +201,7 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
+      console.warn("[Auth] Missing session token");
       return null;
     }
 
@@ -269,6 +269,17 @@ class SDKServer {
       if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
         sessionToken = authHeader.slice(7);
       }
+    }
+
+    if (!sessionToken) {
+      console.warn("[Auth] Missing session cookie", {
+        host: req.headers.host,
+        path: req.originalUrl ?? req.url,
+        protocol: req.protocol,
+        forwardedProto: req.headers["x-forwarded-proto"],
+        cookieHeaderPresent: Boolean(req.headers.cookie),
+        authorizationHeaderPresent: typeof req.headers.authorization === "string",
+      });
     }
 
     const session = await this.verifySession(sessionToken);

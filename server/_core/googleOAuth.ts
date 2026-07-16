@@ -113,6 +113,14 @@ export function registerGoogleOAuthRoutes(app: Express) {
       });
 
       const cookieOptions = getSessionCookieOptions(req);
+      console.info("[Google OAuth] Setting session cookie", {
+        host: req.get("host"),
+        protocol: req.protocol,
+        forwardedProto: req.headers["x-forwarded-proto"],
+        secure: cookieOptions.secure,
+        sameSite: cookieOptions.sameSite,
+        path: cookieOptions.path,
+      });
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
       return res.redirect(302, "/");
     } catch (err) {
