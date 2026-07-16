@@ -8,10 +8,17 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? "";
 
 function getRedirectUri(req: Request): string {
-  const origin = process.env.APP_URL
-    ?? (process.env.NODE_ENV === "production"
-      ? "https://branchmgr.xyz"
-      : `${req.protocol}://${req.get("host")}`);
+  const configuredOrigin = process.env.OAUTH_SERVER_URL?.trim().replace(/\/+$/, "");
+
+  if (configuredOrigin) {
+    return `${configuredOrigin}/api/oauth/google/callback`;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("OAUTH_SERVER_URL must be configured in production");
+  }
+
+  const origin = `${req.protocol}://${req.get("host")}`;
   return `${origin}/api/oauth/google/callback`;
 }
 
