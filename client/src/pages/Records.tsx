@@ -405,11 +405,8 @@ export default function Records() {
   const [period, setPeriod] = useState<Period>("month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-<<<<<<< HEAD
-=======
   const startDatePickerRef = useRef<HTMLInputElement>(null);
   const endDatePickerRef = useRef<HTMLInputElement>(null);
->>>>>>> b689c7a (Update reports, cash flow, and access controls)
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 100;
@@ -566,44 +563,37 @@ export default function Records() {
             <div className="flex flex-col sm:flex-row gap-3 mt-3">
               <div className="flex-1">
                 <label className="text-xs text-muted-foreground mb-1 block">من تاريخ</label>
-<<<<<<< HEAD
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  dir="ltr"
-                  placeholder="DD/MM/YYYY"
-                  maxLength={10}
-                  value={customStart}
-                  onChange={(e) => { setCustomStart(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                  className="bg-background text-left"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-muted-foreground mb-1 block">إلى تاريخ</label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  dir="ltr"
-                  placeholder="DD/MM/YYYY"
-                  maxLength={10}
-                  value={customEnd}
-                  onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                  className="bg-background text-left"
-                />
-=======
                 <div className="relative">
                   <Input
                     type="text"
                     inputMode="numeric"
                     dir="ltr"
-                    placeholder="YYYY/MM/DD"
+                    placeholder="DD/MM/YYYY"
                     maxLength={10}
                     value={customStart}
                     onChange={(e) => { setCustomStart(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                    className="bg-background pr-10 text-right"
+                    className="bg-background pr-10 text-left"
                   />
-                  <button type="button" aria-label="اختيار تاريخ البداية" onClick={() => { const picker = startDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
-                  <input ref={startDatePickerRef} type="date" value={pickerValue(customStart)} onChange={(e) => { setCustomStart(formatPickedDate(e.target.value)); setPeriod("custom"); resetPage(); }} className="sr-only" tabIndex={-1} />
+                  <button
+                    type="button"
+                    aria-label="اختيار تاريخ البداية"
+                    onClick={() => {
+                      const picker = startDatePickerRef.current;
+                      if (picker?.showPicker) picker.showPicker();
+                      else picker?.click();
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"
+                  >
+                    <Calendar className="h-4 w-4" />
+                  </button>
+                  <input
+                    ref={startDatePickerRef}
+                    type="date"
+                    value={pickerValue(customStart)}
+                    onChange={(e) => { setCustomStart(formatPickedDate(e.target.value)); setPeriod("custom"); resetPage(); }}
+                    className="sr-only"
+                    tabIndex={-1}
+                  />
                 </div>
               </div>
               <div className="flex-1">
@@ -613,16 +603,33 @@ export default function Records() {
                     type="text"
                     inputMode="numeric"
                     dir="ltr"
-                    placeholder="YYYY/MM/DD"
+                    placeholder="DD/MM/YYYY"
                     maxLength={10}
                     value={customEnd}
                     onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                    className="bg-background pr-10 text-right"
+                    className="bg-background pr-10 text-left"
                   />
-                  <button type="button" aria-label="اختيار تاريخ النهاية" onClick={() => { const picker = endDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
-                  <input ref={endDatePickerRef} type="date" value={pickerValue(customEnd)} onChange={(e) => { setCustomEnd(formatPickedDate(e.target.value)); setPeriod("custom"); resetPage(); }} className="sr-only" tabIndex={-1} />
+                  <button
+                    type="button"
+                    aria-label="اختيار تاريخ النهاية"
+                    onClick={() => {
+                      const picker = endDatePickerRef.current;
+                      if (picker?.showPicker) picker.showPicker();
+                      else picker?.click();
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"
+                  >
+                    <Calendar className="h-4 w-4" />
+                  </button>
+                  <input
+                    ref={endDatePickerRef}
+                    type="date"
+                    value={pickerValue(customEnd)}
+                    onChange={(e) => { setCustomEnd(formatPickedDate(e.target.value)); setPeriod("custom"); resetPage(); }}
+                    className="sr-only"
+                    tabIndex={-1}
+                  />
                 </div>
->>>>>>> b689c7a (Update reports, cash flow, and access controls)
               </div>
             </div>
           </div>

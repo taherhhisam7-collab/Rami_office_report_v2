@@ -86,30 +86,31 @@ export async function getCashFlowData(filters: CashFlowFilters = {}): Promise<Ca
         dateTimeRenderOption: "FORMATTED_STRING",
       });
 
-      return (response.data.values ?? [])
-        .map((row, index) => {
-          const parsedDate = parseDate(row[0]);
-          if (!parsedDate) return null;
-          return {
-            id: `${branch}-${index + 4}`,
-            branch,
-            date: parsedDate.label,
-            dateTs: parsedDate.ts,
-            description: String(row[1] ?? "").trim(),
-            expense: parseAmount(row[2]),
-            income: parseAmount(row[3]),
-            balance: parseAmount(row[4]),
-          } satisfies CashFlowRow;
-        })
-        .filter((row): row is CashFlowRow => row !== null);
+      const parsedRows: CashFlowRow[] = [];
+      for (const [index, row] of (response.data.values ?? []).entries()) {
+        const parsedDate = parseDate(row[0]);
+        if (!parsedDate) continue;
+        parsedRows.push({
+          id: `${branch}-${index + 4}`,
+          branch,
+          date: parsedDate.label,
+          dateTs: parsedDate.ts,
+          description: String(row[1] ?? "").trim(),
+          expense: parseAmount(row[2]),
+          income: parseAmount(row[3]),
+          balance: parseAmount(row[4]),
+        });
+      }
+
+      return parsedRows;
     })
   );
 
-  const dateRows = responses.flat().filter(row =>
+  const dateRows: CashFlowRow[] = responses.flat().filter((row): row is CashFlowRow =>
     (filters.startTs === undefined || row.dateTs >= filters.startTs) &&
     (filters.endTs === undefined || row.dateTs <= filters.endTs)
   );
-  let rows = dateRows;
+  let rows: CashFlowRow[] = dateRows;
   if (filters.branch) rows = rows.filter(row => row.branch === filters.branch);
   if (filters.search?.trim()) {
     const query = filters.search.trim().toLowerCase();
@@ -118,7 +119,9 @@ export async function getCashFlowData(filters: CashFlowFilters = {}): Promise<Ca
 
   rows.sort((a, b) => b.dateTs - a.dateTs || a.id.localeCompare(b.id));
   const balances = CASH_FLOW_BRANCHES.map(({ branch }) => {
-    const branchRows = dateRows.filter(row => row.branch === branch).sort((a, b) => b.dateTs - a.dateTs || a.id.localeCompare(b.id));
+    const branchRows: CashFlowRow[] = dateRows
+      .filter((row): row is CashFlowRow => row.branch === branch)
+      .sort((a, b) => b.dateTs - a.dateTs || a.id.localeCompare(b.id));
     return { branch, balance: branchRows[0]?.balance ?? 0 };
   });
 
