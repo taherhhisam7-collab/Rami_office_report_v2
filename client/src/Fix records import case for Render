@@ -6,7 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
-import Records from "./pages/Records";
+import Records from "./pages/records";
 import CashFlow from "./pages/CashFlow";
 import BranchComparison from "./pages/BranchComparison";
 import GrowthReport from "./pages/GrowthReport";
