@@ -461,29 +461,41 @@ export default function Records() {
   const { data: rawData, isLoading, error } = recordsQuery;
   const { data: filterOpts } = filterOptionsQuery;
   useEffect(() => {
-    const resetPeriodWhenInactive = () => {
-      if (document.visibilityState === "hidden" || !document.hasFocus()) {
-        setPeriod("all");
-        setCustomStart("");
-        setCustomEnd("");
-        setSearch("");
-        setColReceiptNo("");
-        setColBranch("all");
-        setColCustomer("");
-        setColService("all");
-        setColPayment("all");
-        setColEmployee("all");
-        setColAmountMin("");
-        setColAmountMax("");
-        setSortDir("desc");
-        resetPage();
-      }
+    const resetFilters = () => {
+      setPeriod("all");
+      setCustomStart("");
+      setCustomEnd("");
+      setSearch("");
+      setColReceiptNo("");
+      setColBranch("all");
+      setColCustomer("");
+      setColService("all");
+      setColPayment("all");
+      setColEmployee("all");
+      setColAmountMin("");
+      setColAmountMax("");
+      setSortDir("desc");
+      resetPage();
     };
-    document.addEventListener("visibilitychange", resetPeriodWhenInactive);
-    window.addEventListener("blur", resetPeriodWhenInactive);
+    let inactivityTimer: number | undefined;
+    const armInactivityTimer = () => {
+      if (inactivityTimer !== undefined) window.clearTimeout(inactivityTimer);
+      inactivityTimer = window.setTimeout(resetFilters, 60 * 1000);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" || !document.hasFocus()) resetFilters();
+      else armInactivityTimer();
+    };
+    const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"] as const;
+    activityEvents.forEach(event => window.addEventListener(event, armInactivityTimer, { passive: true }));
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", resetFilters);
+    armInactivityTimer();
     return () => {
-      document.removeEventListener("visibilitychange", resetPeriodWhenInactive);
-      window.removeEventListener("blur", resetPeriodWhenInactive);
+      if (inactivityTimer !== undefined) window.clearTimeout(inactivityTimer);
+      activityEvents.forEach(event => window.removeEventListener(event, armInactivityTimer));
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", resetFilters);
     };
   }, [resetPage]);
   useEffect(() => {
