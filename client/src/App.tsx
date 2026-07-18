@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Records from "./pages/Records";
+import CashFlow from "./pages/CashFlow";
 import BranchComparison from "./pages/BranchComparison";
 import GrowthReport from "./pages/GrowthReport";
 import Commissions from "./pages/Commissions";
@@ -19,7 +20,7 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return null; // DashboardLayout تتولى شاشة تسجيل الدخول
-  if (user.role !== "admin") return <Redirect to="/records" />;
+  if (user.email !== OWNER_EMAIL) return <Redirect to="/records" />;
   return <Component />;
 }
 
@@ -38,6 +39,7 @@ function Router() {
       <Switch>
         <Route path="/" component={() => <AdminRoute component={Dashboard} />} />
         <Route path="/records" component={Records} />
+        <Route path="/cash-flow" component={CashFlow} />
         <Route path="/branch-comparison" component={() => <AdminRoute component={BranchComparison} />} />
         <Route path="/growth-report" component={() => <AdminRoute component={GrowthReport} />} />
         <Route path="/commissions" component={() => <OwnerRoute component={Commissions} />} />

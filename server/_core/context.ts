@@ -13,7 +13,12 @@ export async function createContext(
 ): Promise<TrpcContext> {
   let user: User | null = null;
 
-  if (process.env.NODE_ENV !== "production" && process.env.DEV_PREVIEW_ADMIN === "true") {
+  const host = opts.req.headers.host?.split(":")[0];
+  const isLocalPreview =
+    process.env.NODE_ENV !== "production" &&
+    (process.env.DEV_PREVIEW_ADMIN === "true" || host === "localhost" || host === "127.0.0.1");
+
+  if (isLocalPreview) {
     user = {
       id: 0,
       openId: "local-preview-admin",

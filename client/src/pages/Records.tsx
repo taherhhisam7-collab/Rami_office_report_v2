@@ -10,8 +10,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import {
   Loader2, Search, X, Download, Filter,
   ChevronRight, ChevronLeft, ChevronDown, Check,
-  ArrowUp, ArrowDown, ArrowUpDown, SlidersHorizontal,
+  ArrowUp, ArrowDown, ArrowUpDown, Calendar, SlidersHorizontal, RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // ===== أنواع الفترات الزمنية =====
 type Period = "all" | "today" | "yesterday" | "week" | "last_week" | "month" | "last_month" | "quarter" | "year" | "custom";
@@ -47,8 +48,12 @@ function normalizeDateInput(value: string) {
 }
 
 function parseDateInput(value?: string) {
-  if (!value || !/^\d{2}[/-]\d{2}[/-]\d{4}$/.test(value)) return undefined;
-  const [day, month, year] = value.split(/[/-]/).map(Number);
+  if (!value) return undefined;
+  const parts = value.split(/[/-]/).map(Number);
+  const dayFirst = /^\d{2}[/-]\d{2}[/-]\d{4}$/.test(value);
+  const yearFirst = /^\d{4}[/-]\d{2}[/-]\d{2}$/.test(value);
+  if (!dayFirst && !yearFirst) return undefined;
+  const [year, month, day] = yearFirst ? parts : [parts[2], parts[1], parts[0]];
   const parsed = new Date(year, month - 1, day);
   if (
     parsed.getFullYear() !== year
@@ -58,6 +63,22 @@ function parseDateInput(value?: string) {
     return undefined;
   }
   return parsed;
+}
+
+function formatDateValue(timestamp?: number) {
+  if (timestamp === undefined) return "";
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function pickerValue(value?: string) {
+  const date = parseDateInput(value);
+  return date ? date.toISOString().slice(0, 10) : "";
+}
+
+function formatPickedDate(value: string) {
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : "";
 }
 
 function getPeriodRange(period: Period, customStart?: string, customEnd?: string): { startTs?: number; endTs?: number; month?: string } {
@@ -371,11 +392,24 @@ function DateSortButton({ dir, onToggle }: { dir: SortDir; onToggle: () => void 
 // ===== الصفحة الرئيسية =====
 export default function Records() {
   const { user } = useAuth();
+  const utils = trpc.useUtils();
+  const syncDataMutation = trpc.sheets.syncMonth.useMutation({
+    onSuccess: async () => {
+      await utils.sheets.invalidate();
+      toast.success("تم تحديث البيانات");
+    },
+    onError: () => toast.error("فشل تحديث البيانات"),
+  });
 
   // ===== فلاتر الشريط العلوي =====
   const [period, setPeriod] = useState<Period>("month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
+<<<<<<< HEAD
+=======
+  const startDatePickerRef = useRef<HTMLInputElement>(null);
+  const endDatePickerRef = useRef<HTMLInputElement>(null);
+>>>>>>> b689c7a (Update reports, cash flow, and access controls)
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 100;
@@ -425,8 +459,9 @@ export default function Records() {
     pageSize: PAGE_SIZE,
   }), [startTs, endTs, colBranch, colPayment, colEmployee, colService, resolvedMonthYear, search, colReceiptNo, colCustomer, colAmountMin, colAmountMax, page]);
 
-  const { data: rawData, isLoading, error } = trpc.sheets.records.useQuery(queryInput);
-  const { data: filterOpts } = trpc.sheets.filterOptions.useQuery({ monthYear: resolvedMonthYear });
+  const currentMonthRefetch = period === "month" ? 60_000 : false;
+  const { data: rawData, isLoading, error } = trpc.sheets.records.useQuery(queryInput, { refetchInterval: currentMonthRefetch });
+  const { data: filterOpts } = trpc.sheets.filterOptions.useQuery({ monthYear: resolvedMonthYear }, { refetchInterval: currentMonthRefetch });
   const { data: monthInfo } = trpc.sheets.currentMonth.useQuery();
 
   // ===== فرز على الـ client فقط (الفلاتر كلها على الخادم) =====
@@ -465,7 +500,7 @@ export default function Records() {
       {/* ===== الرأس ===== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">السجلات</h1>
+          <h1 className="text-2xl font-bold text-foreground">سجلات السندات</h1>
           <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
             <SlidersHorizontal className="h-3.5 w-3.5" />
             فلاتر متقدمة داخل رؤوس الجدول
@@ -473,6 +508,18 @@ export default function Records() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {user?.role === "admin" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncDataMutation.mutate({})}
+              disabled={syncDataMutation.isPending}
+              className="flex items-center gap-2 border-amber-500 bg-amber-400 text-amber-950 hover:bg-amber-500 hover:text-amber-950"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncDataMutation.isPending ? "animate-spin" : ""}`} />
+              تحديث البيانات
+            </Button>
+          )}
           {activeFiltersCount > 0 && (
             <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-xs text-destructive hover:text-destructive flex items-center gap-1">
               <X className="h-3.5 w-3.5" /> مسح كل الفلاتر
@@ -505,7 +552,7 @@ export default function Records() {
               {PERIOD_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => { setPeriod(opt.value); resetPage(); }}
+                  onClick={() => { const range = getPeriodRange(opt.value); setCustomStart(formatDateValue(range.startTs)); setCustomEnd(formatDateValue(range.endTs)); setPeriod(opt.value); resetPage(); }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     period === opt.value
                       ? "bg-primary text-primary-foreground shadow-sm"
@@ -519,6 +566,7 @@ export default function Records() {
             <div className="flex flex-col sm:flex-row gap-3 mt-3">
               <div className="flex-1">
                 <label className="text-xs text-muted-foreground mb-1 block">من تاريخ</label>
+<<<<<<< HEAD
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -542,6 +590,39 @@ export default function Records() {
                   onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
                   className="bg-background text-left"
                 />
+=======
+                <div className="relative">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    dir="ltr"
+                    placeholder="YYYY/MM/DD"
+                    maxLength={10}
+                    value={customStart}
+                    onChange={(e) => { setCustomStart(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
+                    className="bg-background pr-10 text-right"
+                  />
+                  <button type="button" aria-label="اختيار تاريخ البداية" onClick={() => { const picker = startDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
+                  <input ref={startDatePickerRef} type="date" value={pickerValue(customStart)} onChange={(e) => { setCustomStart(formatPickedDate(e.target.value)); setPeriod("custom"); resetPage(); }} className="sr-only" tabIndex={-1} />
+                </div>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">إلى تاريخ</label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    dir="ltr"
+                    placeholder="YYYY/MM/DD"
+                    maxLength={10}
+                    value={customEnd}
+                    onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
+                    className="bg-background pr-10 text-right"
+                  />
+                  <button type="button" aria-label="اختيار تاريخ النهاية" onClick={() => { const picker = endDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
+                  <input ref={endDatePickerRef} type="date" value={pickerValue(customEnd)} onChange={(e) => { setCustomEnd(formatPickedDate(e.target.value)); setPeriod("custom"); resetPage(); }} className="sr-only" tabIndex={-1} />
+                </div>
+>>>>>>> b689c7a (Update reports, cash flow, and access controls)
               </div>
             </div>
           </div>

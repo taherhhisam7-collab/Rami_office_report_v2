@@ -262,7 +262,7 @@ const inflightRequests = new Map<string, Promise<SheetRow[]>>();
 function getCacheTTL(sheetName: string): number {
   const current = getCurrentArabicMonth();
   return sheetName === current
-    ? 5 * 60 * 1000
+    ? 60 * 1000
     : 30 * 60 * 1000;
 }
 
@@ -699,7 +699,7 @@ export async function importHistoricalSheetsToDatabase() {
  * periods are never fetched by this scheduler. It is intentionally disabled
  * until both the database URL and Google service-account JSON are configured.
  */
-export function startCurrentMonthSync(intervalMs = 60 * 60 * 1000) {
+export function startCurrentMonthSync(intervalMs = 60 * 1000) {
   if (!process.env.DATABASE_URL || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     console.info("[Sheets] Automatic sync is disabled until DATABASE_URL and GOOGLE_SERVICE_ACCOUNT_JSON are configured.");
     return;

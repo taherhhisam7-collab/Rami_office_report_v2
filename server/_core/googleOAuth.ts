@@ -25,6 +25,14 @@ function getRedirectUri(req: Request): string {
 export function registerGoogleOAuthRoutes(app: Express) {
   // Step 1: Redirect to Google
   app.get("/api/oauth/google/login", (req: Request, res: Response) => {
+    if (!GOOGLE_CLIENT_ID) {
+      const host = req.headers.host?.split(":")[0];
+      if (process.env.NODE_ENV !== "production" && (host === "localhost" || host === "127.0.0.1")) {
+        return res.redirect("/records");
+      }
+      return res.status(503).send("Google OAuth is not configured");
+    }
+
     const redirectUri = getRedirectUri(req);
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,

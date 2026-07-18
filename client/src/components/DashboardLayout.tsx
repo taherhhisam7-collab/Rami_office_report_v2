@@ -33,13 +33,15 @@ const OWNER_EMAIL = "taherhhisam7@gmail.com";
 
 const adminMenuItems = [
   { icon: LayoutDashboard, label: "لوحة التحكم", path: "/" },
-  { icon: FileText, label: "السجلات", path: "/records" },
+  { icon: FileText, label: "سجلات السندات", path: "/records" },
+  { icon: Wallet, label: "حركة الكاش", path: "/cash-flow" },
   { icon: GitCompareArrows, label: "مقارنة الفروع", path: "/branch-comparison" },
   { icon: TrendingUp, label: "تقرير النمو", path: "/growth-report" },
 ];
 
 const userMenuItems = [
-  { icon: FileText, label: "السجلات", path: "/records" },
+  { icon: FileText, label: "سجلات السندات", path: "/records" },
+  { icon: Wallet, label: "حركة الكاش", path: "/cash-flow" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -108,7 +110,7 @@ function DashboardLayoutContent({
   const syncMonthMutation = trpc.sheets.syncMonth.useMutation({
     onSuccess: async result => {
       await utils.sheets.invalidate();
-      toast.success(`Synced ${result.imported} receipts for ${result.monthYear}`);
+      toast.success("تم تحديث البيانات");
     },
     onError: () => toast.error("Current-month sync failed"),
   });
@@ -125,9 +127,8 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const isAdmin = user?.role === "admin";
   const isOwner = user?.email === OWNER_EMAIL;
-  const baseMenuItems = isAdmin ? adminMenuItems : userMenuItems;
+  const baseMenuItems = isOwner ? adminMenuItems : userMenuItems;
   const menuItems = isOwner
     ? [...baseMenuItems, { icon: Wallet, label: "عمولات الموظفين", path: "/commissions" }]
     : baseMenuItems;
@@ -212,7 +213,7 @@ function DashboardLayoutContent({
             </SidebarMenu>
 
             {/* زر تحديث البيانات - للادمن فقط */}
-            {isAdmin && !isCollapsed && (
+            {isOwner && !isCollapsed && (
               <div className="px-3 mt-4">
                 <button
                   onClick={() => syncMonthMutation.mutate({})}
@@ -220,7 +221,7 @@ function DashboardLayoutContent({
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${syncMonthMutation.isPending ? "animate-spin" : ""}`} />
-                  <span>مزامنة الشهر الحالي</span>
+                  <span>تحديث البيانات</span>
                 </button>
                 <button
                   onClick={() => {

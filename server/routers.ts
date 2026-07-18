@@ -3,9 +3,10 @@ import { eq } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { ownerProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { commissionRates, type CommissionRate } from "../drizzle/schema";
+import { buildCommissionReport, ensureCommissionRatesSeeded } from "./commissions";
 import {
   getAllBranchesData,
   getCurrentMonthData,
@@ -24,6 +25,7 @@ import {
   type Filters,
   type MonthYear,
 } from "./sheetsClient";
+import { cashFlowBranches, getCashFlowData } from "./cashFlow";
 
 const ARABIC_MONTHS_LIST = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -129,7 +131,7 @@ export const appRouter = router({
     })),
 
     /** إحصائيات لوحة التحكم */
-    dashboardStats: protectedProcedure
+    dashboardStats: ownerProcedure
       .input(FiltersSchema)
       .query(async ({ input }) => {
         const effectiveMonthYear = resolveMonthYear(input);
@@ -235,7 +237,7 @@ export const appRouter = router({
       }),
 
     /** مقارنة الفروع */
-    branchComparison: protectedProcedure
+    branchComparison: ownerProcedure
       .input(z.object({ monthYear: z.string().optional(), month: z.string().optional() }))
       .query(async ({ input }) => {
         const currentMY: MonthYear = input.monthYear ?? resolveMonthYear({ month: input.month }) ?? getCurrentMonthYear();
@@ -281,7 +283,7 @@ export const appRouter = router({
       }),
 
     /** تقرير النمو */
-    growthReport: protectedProcedure
+    growthReport: ownerProcedure
       .input(z.object({
         selectedMonth: z.string().optional(),
         selectedMonthYear: z.string().optional(),
@@ -386,31 +388,43 @@ export const appRouter = router({
       }),
 
     /** مسح الكاش */
-    clearCache: protectedProcedure.mutation(() => {
+    clearCache: ownerProcedure.mutation(() => {
       clearCache();
       return { success: true };
     }),
 
+    /** حركة الكاش من الشيت المخصص للفروع */
+    cashFlow: protectedProcedure
+      .input(z.object({
+        branch: z.string().optional(),
+        startTs: z.number().optional(),
+        endTs: z.number().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => ({
+        ...(await getCashFlowData(input ?? {})),
+        branches: cashFlowBranches,
+      })),
+
     /** Refreshes one selected period. Restricted to the owner/admin. */
-    syncMonth: adminProcedure
+    syncMonth: ownerProcedure
       .input(z.object({ monthYear: z.string().optional() }))
       .mutation(async ({ input }) => syncMonthFromGoogleSheets(input.monthYear ?? getCurrentMonthYear())),
 
     /** One-time, rate-limited import for all archived Google Sheets tabs. */
-    importHistory: adminProcedure.mutation(() => importHistoricalSheetsToDatabase()),
+    importHistory: ownerProcedure.mutation(() => importHistoricalSheetsToDatabase()),
   }),
 
   // ===== عمولات الموظفين =====
   commissions: router({
     /** جلب كل نسب العمولات */
-    getRates: protectedProcedure.query(async () => {
-      const db = await getDb();
-      if (!db) return [] as CommissionRate[];
-      return db.select().from(commissionRates).orderBy(commissionRates.id);
+    getRates: ownerProcedure.query(async () => {
+      const rates = await ensureCommissionRatesSeeded();
+      return rates as CommissionRate[];
     }),
 
     /** جلب تقرير العمولات لشهر محدد مع فلاتر اختيارية */
-    getReport: protectedProcedure
+    getReport: ownerProcedure
       .input(z.object({
         month: z.string().optional(),
         monthYear: z.string().optional(),
@@ -424,68 +438,24 @@ export const appRouter = router({
         const parsedMY = parseMonthYear(targetMY);
         const rows = await getAllBranchesData(targetMY);
 
-        const filtered = input.branch && input.branch !== "all"
-          ? rows.filter((r) => r.branch === input.branch)
-          : rows;
-
         const employeeAliases: Record<string, string> = {
           "موظف الدمام": "الشاذلي",
         };
 
-        const salesMap: Record<string, number> = {};
-        for (const r of filtered) {
-          if (!r.employee || r.employee.trim() === "-" || r.employee.trim() === "" || r.employee === "لا يوجد") continue;
-          const realName = employeeAliases[r.employee.trim()] ?? r.employee.trim();
-          salesMap[realName] = (salesMap[realName] ?? 0) + r.amount;
-        }
-
-        const db = await getDb();
-        const rates: CommissionRate[] = db
-          ? await db.select().from(commissionRates).orderBy(commissionRates.id)
-          : [];
-
-        const TAX_RATE = 15;
-        const report = rates
-          .filter((emp: CommissionRate) => {
-            if (input.employeeName && input.employeeName !== "all") {
-              return emp.employeeName === input.employeeName;
-            }
-            return true;
-          })
-          .map((emp: CommissionRate) => {
-            // المدير العام: يأخذ نسبته من إجمالي كل المبيعات
-            const isGlobal = (emp as any).isGlobalManager === 1;
-            const totalWithTax = isGlobal
-              ? filtered.reduce((s, r) => s + r.amount, 0)
-              : (salesMap[emp.employeeName] ?? 0);
-            const taxAmount = Math.round((totalWithTax / (1 + TAX_RATE / 100)) * (TAX_RATE / 100) * 1000) / 1000;
-            const amountAfterTax = Math.round((totalWithTax - taxAmount) * 1000) / 1000;
-            const commissionRate = parseFloat(String(emp.rate));
-            const commissionAmount = Math.round((amountAfterTax * commissionRate / 100) * 1000) / 1000;
-            return {
-              id: emp.id,
-              employeeName: emp.employeeName,
-              rate: commissionRate,
-              isActive: emp.isActive,
-              isGlobalManager: isGlobal,
-              totalWithTax,
-              taxAmount,
-              amountAfterTax,
-              commissionAmount,
-            };
-          });
-
-        const totalCommission = report.reduce((s: number, r: { commissionAmount: number }) => s + r.commissionAmount, 0);
-        return {
+        const rates = await ensureCommissionRatesSeeded();
+        return buildCommissionReport({
+          rows: rows.map((row) => ({ employee: row.employee, amount: row.amount, branch: row.branch })),
+          rates,
           month: parsedMY?.month ?? getCurrentArabicMonth(),
           monthYear: targetMY,
-          report,
-          totalCommission,
-        };
+          employeeName: input.employeeName,
+          branch: input.branch,
+          employeeAliases,
+        });
       }),
 
     /** إضافة موظف جديد */
-    addEmployee: protectedProcedure
+    addEmployee: ownerProcedure
       .input(z.object({ employeeName: z.string().min(1), rate: z.number().min(0).max(100) }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -495,7 +465,7 @@ export const appRouter = router({
       }),
 
     /** تعديل نسبة أو اسم موظف */
-    updateEmployee: protectedProcedure
+    updateEmployee: ownerProcedure
       .input(z.object({ id: z.number(), employeeName: z.string().min(1), rate: z.number().min(0).max(100), isActive: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -507,7 +477,7 @@ export const appRouter = router({
       }),
 
     /** حذف موظف */
-    deleteEmployee: protectedProcedure
+    deleteEmployee: ownerProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();

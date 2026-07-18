@@ -27,6 +27,25 @@ const requireUser = t.middleware(async opts => {
 
 export const protectedProcedure = t.procedure.use(requireUser);
 
+const OWNER_EMAIL = "taherhhisam7@gmail.com";
+
+const requireOwner = t.middleware(async opts => {
+  const { ctx, next } = opts;
+
+  if (!ctx.user || ctx.user.email !== OWNER_EMAIL) {
+    throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+export const ownerProcedure = t.procedure.use(requireOwner);
+
 export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
