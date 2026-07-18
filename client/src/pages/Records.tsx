@@ -461,6 +461,32 @@ export default function Records() {
   const { data: rawData, isLoading, error } = recordsQuery;
   const { data: filterOpts } = filterOptionsQuery;
   useEffect(() => {
+    const resetPeriodWhenInactive = () => {
+      if (document.visibilityState === "hidden" || !document.hasFocus()) {
+        setPeriod("all");
+        setCustomStart("");
+        setCustomEnd("");
+        setSearch("");
+        setColReceiptNo("");
+        setColBranch("all");
+        setColCustomer("");
+        setColService("all");
+        setColPayment("all");
+        setColEmployee("all");
+        setColAmountMin("");
+        setColAmountMax("");
+        setSortDir("desc");
+        resetPage();
+      }
+    };
+    document.addEventListener("visibilitychange", resetPeriodWhenInactive);
+    window.addEventListener("blur", resetPeriodWhenInactive);
+    return () => {
+      document.removeEventListener("visibilitychange", resetPeriodWhenInactive);
+      window.removeEventListener("blur", resetPeriodWhenInactive);
+    };
+  }, [resetPage]);
+  useEffect(() => {
     const intervalId = window.setInterval(() => {
       void recordsQuery.refetch();
       void filterOptionsQuery.refetch();

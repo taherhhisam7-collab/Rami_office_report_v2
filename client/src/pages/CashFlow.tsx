@@ -147,8 +147,9 @@ function HeaderTextFilter({ label, value, onChange, placeholder }: { label: stri
 
 function HeaderSelectFilter({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
   const active = value !== "all";
+  const [open, setOpen] = useState(false);
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button type="button" className={`inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-semibold transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           {label}
@@ -158,7 +159,7 @@ function HeaderSelectFilter({ label, value, options, onChange }: { label: string
       <PopoverContent className="w-44 p-2" align="start">
         <div className="space-y-1">
           {["all", ...options].map((option) => (
-            <button key={option} type="button" onClick={() => onChange(option)} className={`block w-full rounded px-2 py-1.5 text-right text-xs hover:bg-muted ${value === option ? "bg-muted font-semibold text-primary" : ""}`}>
+            <button key={option} type="button" onClick={() => { onChange(option); setOpen(false); }} className={`block w-full rounded px-2 py-1.5 text-right text-xs hover:bg-muted ${value === option ? "bg-muted font-semibold text-primary" : ""}`}>
               {option === "all" ? `كل ${label}` : option}
             </button>
           ))}
@@ -207,6 +208,29 @@ export default function CashFlow() {
   const [expenseFilter, setExpenseFilter] = useState("");
   const [incomeFilter, setIncomeFilter] = useState("");
   const [balanceFilter, setBalanceFilter] = useState("");
+  useEffect(() => {
+    const resetPeriodWhenInactive = () => {
+      if (document.visibilityState === "hidden" || !document.hasFocus()) {
+        setPeriod("all");
+        setCustomStart("");
+        setCustomEnd("");
+        setBranch("all");
+        setSearch("");
+        setDateFilter("");
+        setBranchFilter("all");
+        setDescriptionFilter("");
+        setExpenseFilter("");
+        setIncomeFilter("");
+        setBalanceFilter("");
+      }
+    };
+    document.addEventListener("visibilitychange", resetPeriodWhenInactive);
+    window.addEventListener("blur", resetPeriodWhenInactive);
+    return () => {
+      document.removeEventListener("visibilitychange", resetPeriodWhenInactive);
+      window.removeEventListener("blur", resetPeriodWhenInactive);
+    };
+  }, []);
   const { startTs, endTs } = useMemo(() => getRange(period, customStart, customEnd), [period, customStart, customEnd]);
   const cashFlowQuery = trpc.sheets.cashFlow.useQuery({
     branch: branch === "all" ? undefined : branch,
