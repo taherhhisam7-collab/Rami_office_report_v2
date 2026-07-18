@@ -118,8 +118,10 @@ export async function getCashFlowData(filters: CashFlowFilters = {}): Promise<Ca
   }
 
   rows.sort((a, b) => b.dateTs - a.dateTs || a.id.localeCompare(b.id));
+  // بطاقات الرصيد تعرض آخر رصيد فعلي دائمًا، ولا تتأثر بفلاتر جدول الحركات.
+  const balanceRows: CashFlowRow[] = responses.flat();
   const balances = CASH_FLOW_BRANCHES.map(({ branch }) => {
-    const branchRows: CashFlowRow[] = dateRows
+    const branchRows: CashFlowRow[] = balanceRows
       .filter((row): row is CashFlowRow => row.branch === branch)
       .sort((a, b) => b.dateTs - a.dateTs || a.id.localeCompare(b.id));
     return { branch, balance: branchRows[0]?.balance ?? 0 };

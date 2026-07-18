@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Building2, Calendar, Landmark, Loader2, MapPin, MoonStar, RefreshCw, Search, Wallet, Waves } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +65,14 @@ function dayEnd(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999).getTime();
 }
 
+function millisecondsUntilHour(hour: number) {
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(hour, 0, 0, 0);
+  if (next.getTime() <= now.getTime()) next.setDate(next.getDate() + 1);
+  return next.getTime() - now.getTime();
+}
+
 function getRange(period: Period, customStart: string, customEnd: string) {
   const now = new Date();
   const today = dayStart(now);
@@ -110,6 +119,55 @@ function branchIcon(branch: string) {
   return MapPin;
 }
 
+function branchBadgeClass(branch: string) {
+  if (branch.includes("جدة")) return "bg-emerald-100 text-emerald-700";
+  if (branch.includes("الدمام")) return "bg-indigo-100 text-indigo-700";
+  if (branch.includes("الرياض")) return "bg-teal-100 text-teal-700";
+  if (branch.includes("المدينة")) return "bg-amber-100 text-amber-700";
+  return "bg-gray-100 text-gray-700";
+}
+
+function HeaderTextFilter({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
+  const active = Boolean(value);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className={`inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-semibold transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          {label}
+          <Search className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-3" align="start">
+        <label className="mb-1 block text-xs font-semibold text-muted-foreground">فلترة {label}</label>
+        <Input autoFocus value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="h-8 text-sm" />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function HeaderSelectFilter({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
+  const active = value !== "all";
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className={`inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-semibold transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          {label}
+          <span className="text-[10px]">⌄</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-2" align="start">
+        <div className="space-y-1">
+          {["all", ...options].map((option) => (
+            <button key={option} type="button" onClick={() => onChange(option)} className={`block w-full rounded px-2 py-1.5 text-right text-xs hover:bg-muted ${value === option ? "bg-muted font-semibold text-primary" : ""}`}>
+              {option === "all" ? `كل ${label}` : option}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function CashCard({ branch, balance }: { branch: string; balance: number }) {
   const BranchIcon = branchIcon(branch);
 
@@ -138,18 +196,46 @@ export default function CashFlow() {
     },
     onError: () => toast.error("فشل تحديث البيانات"),
   });
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<Period>("today");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [branch, setBranch] = useState("all");
   const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [branchFilter, setBranchFilter] = useState("all");
+  const [descriptionFilter, setDescriptionFilter] = useState("");
+  const [expenseFilter, setExpenseFilter] = useState("");
+  const [incomeFilter, setIncomeFilter] = useState("");
+  const [balanceFilter, setBalanceFilter] = useState("");
   const { startTs, endTs } = useMemo(() => getRange(period, customStart, customEnd), [period, customStart, customEnd]);
-  const { data, isLoading, error } = trpc.sheets.cashFlow.useQuery({
+  const cashFlowQuery = trpc.sheets.cashFlow.useQuery({
     branch: branch === "all" ? undefined : branch,
     startTs,
     endTs,
     search: search || undefined,
-  }, { refetchInterval: period === "month" ? 60_000 : false });
+  }, { refetchInterval: false });
+  const { data, isLoading, error } = cashFlowQuery;
+  useEffect(() => {
+    let intervalId: number | undefined;
+    const timeoutId = window.setTimeout(() => {
+      void cashFlowQuery.refetch();
+      intervalId = window.setInterval(() => { void cashFlowQuery.refetch(); }, 24 * 60 * 60 * 1000);
+    }, millisecondsUntilHour(10));
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+    };
+  }, [cashFlowQuery.refetch]);
+  const branchOptions = useMemo(() => data?.branches ?? Array.from(new Set((data?.rows ?? []).map(row => row.branch))), [data?.branches, data?.rows]);
+  const filteredRows = useMemo(() => (data?.rows ?? []).filter(row => {
+    const dateMatch = !dateFilter || row.date.includes(dateFilter);
+    const branchMatch = branchFilter === "all" || row.branch === branchFilter;
+    const descriptionMatch = !descriptionFilter || row.description.toLowerCase().includes(descriptionFilter.toLowerCase());
+    const expenseMatch = !expenseFilter || String(row.expense).includes(expenseFilter);
+    const incomeMatch = !incomeFilter || String(row.income).includes(incomeFilter);
+    const balanceMatch = !balanceFilter || String(row.balance).includes(balanceFilter);
+    return dateMatch && branchMatch && descriptionMatch && expenseMatch && incomeMatch && balanceMatch;
+  }), [data?.rows, dateFilter, branchFilter, descriptionFilter, expenseFilter, incomeFilter, balanceFilter]);
 
   return (
     <div className="space-y-5">
@@ -227,13 +313,13 @@ export default function CashFlow() {
       </div>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-sm font-semibold">حركة الكاش</CardTitle><p className="text-xs text-muted-foreground">{data?.rows.length ?? 0} حركة</p></CardHeader>
+        <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-sm font-semibold">حركة الكاش</CardTitle><p className="text-xs text-muted-foreground">{filteredRows.length} حركة</p></CardHeader>
         <CardContent className="p-0">
-          {isLoading ? <div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : error ? <div className="flex h-64 items-center justify-center text-sm text-destructive">تعذر تحميل حركة الكاش: {error.message}</div> : !data?.rows.length ? <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">لا توجد حركة ضمن الفلاتر المحددة</div> : (
+          {isLoading ? <div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : error ? <div className="flex h-64 items-center justify-center text-sm text-destructive">تعذر تحميل حركة الكاش: {error.message}</div> : !filteredRows.length ? <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">لا توجد حركة ضمن الفلاتر المحددة</div> : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-border bg-muted/30"><th className="px-3 py-3 text-right">التاريخ</th><th className="px-3 py-3 text-right">الفرع</th><th className="px-3 py-3 text-right">البيان</th><th className="px-3 py-3 text-right">صرف</th><th className="px-3 py-3 text-right">إيراد</th><th className="px-3 py-3 text-right">الرصيد</th></tr></thead>
-                <tbody>{data.rows.map(row => <tr key={row.id} className="border-b border-border/40 hover:bg-muted/20"><td className="whitespace-nowrap px-3 py-2.5 text-xs">{row.date}</td><td className="px-3 py-2.5">{row.branch}</td><td className="max-w-[260px] truncate px-3 py-2.5 text-muted-foreground">{row.description || "—"}</td><td className="whitespace-nowrap px-3 py-2.5 font-semibold text-red-600">{row.expense ? amount(row.expense) : "—"}</td><td className="whitespace-nowrap px-3 py-2.5 font-semibold text-emerald-600">{row.income ? amount(row.income) : "—"}</td><td className="whitespace-nowrap px-3 py-2.5 font-semibold">{amount(row.balance)}</td></tr>)}</tbody>
+                <thead><tr className="border-b border-border bg-muted/30"><th className="px-3 py-3 text-right"><HeaderTextFilter label="التاريخ" value={dateFilter} onChange={setDateFilter} placeholder="مثال: 16/07/2026" /></th><th className="px-3 py-3 text-right"><HeaderSelectFilter label="الفرع" value={branchFilter} options={branchOptions} onChange={setBranchFilter} /></th><th className="px-3 py-3 text-right"><HeaderTextFilter label="البيان" value={descriptionFilter} onChange={setDescriptionFilter} placeholder="ابحث في البيان" /></th><th className="px-3 py-3 text-right"><HeaderTextFilter label="صرف" value={expenseFilter} onChange={setExpenseFilter} placeholder="ابحث بقيمة الصرف" /></th><th className="px-3 py-3 text-right"><HeaderTextFilter label="إيراد" value={incomeFilter} onChange={setIncomeFilter} placeholder="ابحث بقيمة الإيراد" /></th><th className="px-3 py-3 text-right"><HeaderTextFilter label="الرصيد" value={balanceFilter} onChange={setBalanceFilter} placeholder="ابحث بقيمة الرصيد" /></th></tr></thead>
+                <tbody>{filteredRows.map(row => <tr key={row.id} className="border-b border-border/40 hover:bg-muted/20"><td className="whitespace-nowrap px-3 py-2.5 text-xs">{row.date}</td><td className="px-3 py-2.5"><span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${branchBadgeClass(row.branch)}`}>{row.branch}</span></td><td className="max-w-[260px] truncate px-3 py-2.5 text-muted-foreground">{row.description || "—"}</td><td className="whitespace-nowrap px-3 py-2.5 font-semibold text-red-600">{row.expense ? amount(row.expense) : "—"}</td><td className="whitespace-nowrap px-3 py-2.5 font-semibold text-emerald-600">{row.income ? amount(row.income) : "—"}</td><td className="whitespace-nowrap px-3 py-2.5 font-semibold">{amount(row.balance)}</td></tr>)}</tbody>
               </table>
             </div>
           )}

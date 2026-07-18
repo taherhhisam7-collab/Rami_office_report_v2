@@ -456,9 +456,17 @@ export default function Records() {
     pageSize: PAGE_SIZE,
   }), [startTs, endTs, colBranch, colPayment, colEmployee, colService, resolvedMonthYear, search, colReceiptNo, colCustomer, colAmountMin, colAmountMax, page]);
 
-  const currentMonthRefetch = period === "month" ? 60_000 : false;
-  const { data: rawData, isLoading, error } = trpc.sheets.records.useQuery(queryInput, { refetchInterval: currentMonthRefetch });
-  const { data: filterOpts } = trpc.sheets.filterOptions.useQuery({ monthYear: resolvedMonthYear }, { refetchInterval: currentMonthRefetch });
+  const recordsQuery = trpc.sheets.records.useQuery(queryInput, { refetchInterval: false });
+  const filterOptionsQuery = trpc.sheets.filterOptions.useQuery({ monthYear: resolvedMonthYear }, { refetchInterval: false });
+  const { data: rawData, isLoading, error } = recordsQuery;
+  const { data: filterOpts } = filterOptionsQuery;
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void recordsQuery.refetch();
+      void filterOptionsQuery.refetch();
+    }, 60 * 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [recordsQuery.refetch, filterOptionsQuery.refetch]);
   const { data: monthInfo } = trpc.sheets.currentMonth.useQuery();
 
   // ===== فرز على الـ client فقط (الفلاتر كلها على الخادم) =====
