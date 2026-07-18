@@ -336,7 +336,7 @@ export default function CashFlow() {
               <label className="text-xs font-medium text-muted-foreground">من تاريخ</label>
               <div className="relative">
                 <Input type="text" inputMode="numeric" dir="ltr" placeholder="YYYY/MM/DD" maxLength={10} value={customStart} onChange={event => { setCustomStart(normalizeDate(event.target.value)); setPeriod("custom"); }} className="bg-background pr-10 text-right" />
-                <button type="button" aria-label="اختيار تاريخ البداية" onClick={() => { const picker = startDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
+                <button type="button" aria-label="اختيار تاريخ البداية" onClick={() => { const picker = startDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
                 <input ref={startDatePickerRef} type="date" value={pickerValue(customStart)} onChange={event => { setCustomStart(formatPickedDate(event.target.value)); setPeriod("custom"); }} className="sr-only" tabIndex={-1} />
               </div>
             </div>
@@ -344,7 +344,7 @@ export default function CashFlow() {
               <label className="text-xs font-medium text-muted-foreground">إلى تاريخ</label>
               <div className="relative">
                 <Input type="text" inputMode="numeric" dir="ltr" placeholder="YYYY/MM/DD" maxLength={10} value={customEnd} onChange={event => { setCustomEnd(normalizeDate(event.target.value)); setPeriod("custom"); }} className="bg-background pr-10 text-right" />
-                <button type="button" aria-label="اختيار تاريخ النهاية" onClick={() => { const picker = endDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
+                <button type="button" aria-label="اختيار تاريخ النهاية" onClick={() => { const picker = endDatePickerRef.current; if (picker?.showPicker) picker.showPicker(); else picker?.click(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"><Calendar className="h-4 w-4" /></button>
                 <input ref={endDatePickerRef} type="date" value={pickerValue(customEnd)} onChange={event => { setCustomEnd(formatPickedDate(event.target.value)); setPeriod("custom"); }} className="sr-only" tabIndex={-1} />
               </div>
             </div>
