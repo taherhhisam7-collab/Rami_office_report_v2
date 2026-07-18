@@ -614,11 +614,11 @@ export default function Records() {
                     type="text"
                     inputMode="numeric"
                     dir="ltr"
-                    placeholder="DD/MM/YYYY"
+                    placeholder="YYYY/MM/DD"
                     maxLength={10}
                     value={customStart}
                     onChange={(e) => { setCustomStart(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                    className="bg-background pr-10 text-left"
+                    className="bg-background pr-10 text-right"
                   />
                   <button
                     type="button"
@@ -649,11 +649,11 @@ export default function Records() {
                     type="text"
                     inputMode="numeric"
                     dir="ltr"
-                    placeholder="DD/MM/YYYY"
+                    placeholder="YYYY/MM/DD"
                     maxLength={10}
                     value={customEnd}
                     onChange={(e) => { setCustomEnd(normalizeDateInput(e.target.value)); setPeriod("custom"); resetPage(); }}
-                    className="bg-background pr-10 text-left"
+                    className="bg-background pr-10 text-right"
                   />
                   <button
                     type="button"
