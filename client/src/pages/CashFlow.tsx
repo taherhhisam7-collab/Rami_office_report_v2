@@ -186,8 +186,17 @@ function CashCard({ branch, balance }: { branch: string; balance: number }) {
           <p className="text-lg font-bold text-blue-700">{branch}</p>
           <BranchIcon className="h-4 w-4 text-amber-500" />
         </div>
-        <p className="mt-3 text-sm font-semibold text-orange-500">الرصيد الفعلي</p>
-        <p className={`mt-1 text-xl font-bold ${balance > 0 ? "text-green-600" : balance < 0 ? "text-red-600" : "text-muted-foreground"}`}>{wholeAmount(balance)}</p>
+        <p className={`mt-3 text-xl font-bold ${balance > 0 ? "text-green-600" : balance < 0 ? "text-red-600" : "text-muted-foreground"}`}>{wholeAmount(balance)}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActualBalances() {
+  return (
+    <Card className="border-orange-200 bg-orange-50/40">
+      <CardContent className="p-3">
+        <p className="text-center text-4xl font-bold text-blue-700">رصيد اليوم للفروع</p>
       </CardContent>
     </Card>
   );
@@ -205,7 +214,7 @@ export default function CashFlow() {
     },
     onError: () => toast.error("فشل تحديث البيانات"),
   });
-  const [period, setPeriod] = useState<Period>("today");
+  const [period, setPeriod] = useState<Period>("all");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [branch, setBranch] = useState("all");
@@ -217,26 +226,38 @@ export default function CashFlow() {
   const [incomeFilter, setIncomeFilter] = useState("");
   const [balanceFilter, setBalanceFilter] = useState("");
   useEffect(() => {
-    const resetPeriodWhenInactive = () => {
-      if (document.visibilityState === "hidden" || !document.hasFocus()) {
-        setPeriod("all");
-        setCustomStart("");
-        setCustomEnd("");
-        setBranch("all");
-        setSearch("");
-        setDateFilter("");
-        setBranchFilter("all");
-        setDescriptionFilter("");
-        setExpenseFilter("");
-        setIncomeFilter("");
-        setBalanceFilter("");
-      }
+    const resetFilters = () => {
+      setPeriod("all");
+      setCustomStart("");
+      setCustomEnd("");
+      setBranch("all");
+      setSearch("");
+      setDateFilter("");
+      setBranchFilter("all");
+      setDescriptionFilter("");
+      setExpenseFilter("");
+      setIncomeFilter("");
+      setBalanceFilter("");
     };
-    document.addEventListener("visibilitychange", resetPeriodWhenInactive);
-    window.addEventListener("blur", resetPeriodWhenInactive);
+    let inactivityTimer: number | undefined;
+    const armInactivityTimer = () => {
+      if (inactivityTimer !== undefined) window.clearTimeout(inactivityTimer);
+      inactivityTimer = window.setTimeout(resetFilters, 60 * 1000);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" || !document.hasFocus()) resetFilters();
+      else armInactivityTimer();
+    };
+    const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"] as const;
+    activityEvents.forEach(event => window.addEventListener(event, armInactivityTimer, { passive: true }));
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", resetFilters);
+    armInactivityTimer();
     return () => {
-      document.removeEventListener("visibilitychange", resetPeriodWhenInactive);
-      window.removeEventListener("blur", resetPeriodWhenInactive);
+      if (inactivityTimer !== undefined) window.clearTimeout(inactivityTimer);
+      activityEvents.forEach(event => window.removeEventListener(event, armInactivityTimer));
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", resetFilters);
     };
   }, []);
   const { startTs, endTs } = useMemo(() => getRange(period, customStart, customEnd), [period, customStart, customEnd]);
@@ -347,8 +368,11 @@ export default function CashFlow() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {(data?.balances ?? []).map(item => <CashCard key={item.branch} branch={item.branch} balance={item.balance} />)}
+      <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4 shadow-sm">
+        <ActualBalances />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {(data?.balances ?? []).map(item => <CashCard key={item.branch} branch={item.branch} balance={item.balance} />)}
+        </div>
       </div>
 
       <Card>
