@@ -628,7 +628,7 @@ export default function Records() {
                       if (picker?.showPicker) picker.showPicker();
                       else picker?.click();
                     }}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"
                   >
                     <Calendar className="h-4 w-4" />
                   </button>
@@ -663,7 +663,7 @@ export default function Records() {
                       if (picker?.showPicker) picker.showPicker();
                       else picker?.click();
                     }}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"
                   >
                     <Calendar className="h-4 w-4" />
                   </button>
