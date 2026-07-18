@@ -25,7 +25,7 @@ import {
   type Filters,
   type MonthYear,
 } from "./sheetsClient";
-import { cashFlowBranches, getCashFlowData } from "./cashFlow";
+import { cashFlowBranches, getCashFlowData, syncCashMovementsToSheet } from "./cashFlow";
 
 const ARABIC_MONTHS_LIST = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -409,7 +409,14 @@ export const appRouter = router({
     /** Refreshes one selected period. Restricted to the owner/admin. */
     syncMonth: ownerProcedure
       .input(z.object({ monthYear: z.string().optional() }))
-      .mutation(async ({ input }) => syncMonthFromGoogleSheets(input.monthYear ?? getCurrentMonthYear())),
+      .mutation(async ({ input }) => {
+        const monthYear = input.monthYear ?? getCurrentMonthYear();
+        const result = await syncMonthFromGoogleSheets(monthYear);
+        const cashFlow = monthYear === getCurrentMonthYear()
+          ? await syncCashMovementsToSheet()
+          : null;
+        return { ...result, cashFlow };
+      }),
 
     /** One-time, rate-limited import for all archived Google Sheets tabs. */
     importHistory: ownerProcedure.mutation(() => importHistoricalSheetsToDatabase()),

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,8 @@ import { Building2, Calendar, Landmark, Loader2, MapPin, MoonStar, RefreshCw, Se
 import { toast } from "sonner";
 
 type Period = "all" | "today" | "yesterday" | "week" | "last_week" | "month" | "last_month" | "quarter" | "year" | "custom";
+
+const OWNER_EMAIL = "taherhhisam7@gmail.com";
 
 const PERIODS: Array<{ value: Period; label: string }> = [
   { value: "all", label: "كل الفترات" },
@@ -111,6 +114,10 @@ function amount(value: number) {
   return `${value.toLocaleString("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`;
 }
 
+function wholeAmount(value: number) {
+  return `${Math.ceil(value).toLocaleString("ar-SA")} ر.س`;
+}
+
 function branchIcon(branch: string) {
   if (branch.includes("\u062c\u062f\u0629")) return Landmark;
   if (branch.includes("\u0627\u0644\u062f\u0645\u0627\u0645")) return Waves;
@@ -180,7 +187,7 @@ function CashCard({ branch, balance }: { branch: string; balance: number }) {
           <BranchIcon className="h-4 w-4 text-amber-500" />
         </div>
         <p className="mt-3 text-sm font-semibold text-orange-500">الرصيد الفعلي</p>
-        <p className={`mt-1 text-xl font-bold ${balance > 0 ? "text-green-600" : balance < 0 ? "text-red-600" : "text-muted-foreground"}`}>{amount(balance)}</p>
+        <p className={`mt-1 text-xl font-bold ${balance > 0 ? "text-green-600" : balance < 0 ? "text-red-600" : "text-muted-foreground"}`}>{wholeAmount(balance)}</p>
       </CardContent>
     </Card>
   );
@@ -188,6 +195,7 @@ function CashCard({ branch, balance }: { branch: string; balance: number }) {
 
 export default function CashFlow() {
   const utils = trpc.useUtils();
+  const { user } = useAuth();
   const startDatePickerRef = useRef<HTMLInputElement>(null);
   const endDatePickerRef = useRef<HTMLInputElement>(null);
   const syncDataMutation = trpc.sheets.syncMonth.useMutation({
@@ -241,15 +249,22 @@ export default function CashFlow() {
   const { data, isLoading, error } = cashFlowQuery;
   useEffect(() => {
     let intervalId: number | undefined;
+    const refreshCashFlow = () => {
+      if (user?.email === OWNER_EMAIL) {
+        syncDataMutation.mutate({});
+      } else {
+        void cashFlowQuery.refetch();
+      }
+    };
     const timeoutId = window.setTimeout(() => {
-      void cashFlowQuery.refetch();
-      intervalId = window.setInterval(() => { void cashFlowQuery.refetch(); }, 24 * 60 * 60 * 1000);
+      refreshCashFlow();
+      intervalId = window.setInterval(refreshCashFlow, 24 * 60 * 60 * 1000);
     }, millisecondsUntilHour(10));
     return () => {
       window.clearTimeout(timeoutId);
       if (intervalId !== undefined) window.clearInterval(intervalId);
     };
-  }, [cashFlowQuery.refetch]);
+  }, [cashFlowQuery.refetch, syncDataMutation.mutate, user?.email]);
   const branchOptions = useMemo(() => data?.branches ?? Array.from(new Set((data?.rows ?? []).map(row => row.branch))), [data?.branches, data?.rows]);
   const filteredRows = useMemo(() => (data?.rows ?? []).filter(row => {
     const dateMatch = !dateFilter || row.date.includes(dateFilter);
@@ -315,18 +330,18 @@ export default function CashFlow() {
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="sm:col-span-2 flex flex-col gap-1">
+              <label className="text-xs font-medium text-orange-700">الفرع</label>
+              <select value={branch} onChange={event => setBranch(event.target.value)} className="h-9 rounded-md border border-orange-400 bg-orange-50 px-3 text-sm text-orange-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                <option value="all">كل الفروع</option>
+                {(data?.branches ?? []).map(item => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-muted-foreground">البحث</label>
               <div className="relative">
                 <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="ابحث في البيان أو الفرع" className="bg-background pr-9" />
               </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-muted-foreground">الفرع</label>
-              <select value={branch} onChange={event => setBranch(event.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
-                <option value="all">كل الفروع</option>
-                {(data?.branches ?? []).map(item => <option key={item} value={item}>{item}</option>)}
-              </select>
             </div>
           </div>
         </CardContent>
