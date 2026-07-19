@@ -182,9 +182,9 @@ function CashCard({ branch, balance }: { branch: string; balance: number }) {
   return (
     <Card className="border-2 border-black shadow-md">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <BranchIcon className="h-5 w-5 shrink-0 text-amber-500" />
           <p className="text-lg font-bold text-blue-700">{branch}</p>
-          <BranchIcon className="h-4 w-4 text-amber-500" />
         </div>
         <p className={`mt-3 text-xl font-bold ${balance > 0 ? "text-green-600" : balance < 0 ? "text-red-600" : "text-muted-foreground"}`}>{wholeAmount(balance)}</p>
       </CardContent>
