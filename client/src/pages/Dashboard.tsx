@@ -349,7 +349,8 @@ export default function Dashboard() {
         {/* توزيع طرق الدفع */}
         <ChartCard title="توزيع طرق الدفع" contentClassName="rounded-b-xl bg-white">
           {s.byPayment.length === 0 ? <EmptyChart /> : (
-            <ResponsiveContainer width="100%" height={260}>
+            <div className="space-y-2">
+            <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
                   data={s.byPayment}
@@ -360,7 +361,7 @@ export default function Dashboard() {
                   outerRadius={90}
                   innerRadius={50}
                   paddingAngle={3}
-                  label={({ key, percent }) => `${key} ${(percent * 100).toFixed(0)}%`}
+                  label={false}
                   labelLine={false}
                 >
                   {s.byPayment.map((_, i) => (
@@ -368,9 +369,20 @@ export default function Dashboard() {
                   ))}
                 </Pie>
                 <Tooltip formatter={(v: number) => formatAmountFull(v)} />
-                <Legend formatter={(v) => v} wrapperStyle={{ fontFamily: "Tajawal", fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
+            <div className="grid grid-cols-2 gap-2 px-2 pb-1">
+              {s.byPayment.map((item, i) => (
+                <div key={item.key} className="flex items-center justify-between rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs">
+                  <span className="flex items-center gap-1.5 text-slate-800 font-medium">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                    {item.key}
+                  </span>
+                  <span className="text-slate-700">{formatAmount(item.total)}</span>
+                </div>
+              ))}
+            </div>
+            </div>
           )}
         </ChartCard>
       </div>
@@ -417,18 +429,18 @@ export default function Dashboard() {
               <BarChart
                 data={s.byEmployee.slice(0, 12).map((e, i) => ({ ...e, _colorIdx: i }))}
                 layout="vertical"
-                margin={{ top: 5, right: 130, left: 10, bottom: 5 }}
+                margin={{ top: 5, right: 90, left: 110, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                 <XAxis type="number" tickFormatter={formatAmountFull} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} />
                 <YAxis
                   type="category"
                   dataKey="key"
-                  width={160}
-                  tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "#111827", fontWeight: 600 }}
+                  width={130}
+                  tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827", fontWeight: 600 }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(v: string) => v}
+                  tickFormatter={(v: string) => v.length > 16 ? `${v.slice(0, 16)}…` : v}
                 />
                 <Tooltip
                   content={({ active, payload }) => {
