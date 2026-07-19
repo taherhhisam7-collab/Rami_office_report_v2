@@ -704,9 +704,9 @@ export default function Records() {
       {data && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <SummaryCard label="إجمالي المبالغ" value={formatAmountFull(data.totalAmount)} valueClass="text-green-700" />
-          <SummaryCard label="عدد السندات" value={data.total.toLocaleString("ar-SA")} />
+          <SummaryCard label="عدد السندات" value={data.total.toLocaleString("ar-SA")} valueClass="text-green-700" />
           <SummaryCard label="متوسط السند" value={data.total > 0 ? formatAmountFull(data.totalAmount / data.total) : "—"} valueClass="text-green-700" />
-          <SummaryCard label="الصفحة" value={`${rawData?.page ?? 1} / ${rawData?.totalPages || 1}`} sub={`${PAGE_SIZE} سجل في الصفحة`} />
+          <SummaryCard label="الصفحة" value={`${rawData?.page ?? 1} / ${rawData?.totalPages || 1}`} sub={`${PAGE_SIZE} سجل في الصفحة`} valueClass="text-green-700" />
         </div>
       )}
 
