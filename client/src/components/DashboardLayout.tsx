@@ -30,6 +30,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 const OWNER_EMAIL = "taherhhisam7@gmail.com";
+const FULL_ACCESS_EMAILS = new Set([OWNER_EMAIL, "m.binzaqr@gmail.com"]);
 
 const adminMenuItems = [
   { icon: LayoutDashboard, label: "لوحة التحكم", path: "/" },
@@ -128,7 +129,8 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const isOwner = user?.email === OWNER_EMAIL;
-  const baseMenuItems = isOwner ? adminMenuItems : userMenuItems;
+  const hasFullAccess = !!user?.email && FULL_ACCESS_EMAILS.has(user.email.toLowerCase());
+  const baseMenuItems = hasFullAccess ? adminMenuItems : userMenuItems;
   const menuItems = baseMenuItems;
   const activeMenuItem = menuItems.find((item) => item.path === location);
 

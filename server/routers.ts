@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { ownerProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { fullAccessProcedure, ownerProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { commissionRates, type CommissionRate } from "../drizzle/schema";
 import { buildCommissionReport, ensureCommissionRatesSeeded } from "./commissions";
@@ -131,7 +131,7 @@ export const appRouter = router({
     })),
 
     /** إحصائيات لوحة التحكم */
-    dashboardStats: ownerProcedure
+    dashboardStats: fullAccessProcedure
       .input(FiltersSchema)
       .query(async ({ input }) => {
         const effectiveMonthYear = resolveMonthYear(input);
@@ -239,7 +239,7 @@ export const appRouter = router({
       }),
 
     /** مقارنة الفروع */
-    branchComparison: ownerProcedure
+    branchComparison: fullAccessProcedure
       .input(z.object({ monthYear: z.string().optional(), month: z.string().optional(), startTs: z.number().optional(), endTs: z.number().optional() }))
       .query(async ({ input }) => {
         const isCustomRange = input.startTs !== undefined && input.endTs !== undefined;
@@ -297,7 +297,7 @@ export const appRouter = router({
       }),
 
     /** تقرير النمو */
-    growthReport: ownerProcedure
+    growthReport: fullAccessProcedure
       .input(z.object({
         selectedMonth: z.string().optional(),
         selectedMonthYear: z.string().optional(),
