@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
 } from "recharts";
-import { TrendingUp, TrendingDown, Minus, Building2, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Building2, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ARABIC_MONTHS = [
@@ -20,6 +20,24 @@ const BRANCH_COLORS: Record<string, string> = {
   "جدة":     "#10b981",
   "المدينة": "#ec4899",
 };
+type ComparisonPeriod = "all" | "today" | "yesterday" | "week" | "last_week" | "month" | "last_month" | "quarter" | "year" | "custom";
+const COMPARISON_PERIODS: Array<{ value: ComparisonPeriod; label: string }> = [
+  { value: "all", label: "كل الفترات" }, { value: "today", label: "اليوم" }, { value: "yesterday", label: "أمس" },
+  { value: "week", label: "هذا الأسبوع" }, { value: "last_week", label: "الأسبوع الماضي" }, { value: "month", label: "هذا الشهر" },
+  { value: "last_month", label: "الشهر الماضي" }, { value: "quarter", label: "هذا الربع" }, { value: "year", label: "هذه السنة" }, { value: "custom", label: "نطاق مخصص" },
+];
+function comparisonRange(period: ComparisonPeriod, start: string, end: string) {
+  const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const finish = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).getTime();
+  if (period === "custom") return { startTs: start ? new Date(`${start}T00:00:00`).getTime() : undefined, endTs: end ? finish(new Date(`${end}T00:00:00`)) : undefined };
+  if (period === "all" || period === "month") return {};
+  if (period === "today") return { startTs: today.getTime(), endTs: finish(today) };
+  if (period === "yesterday") { const d = new Date(today); d.setDate(d.getDate() - 1); return { startTs: d.getTime(), endTs: finish(d) }; }
+  if (period === "week" || period === "last_week") { const d = new Date(today); const day = d.getDay() || 7; d.setDate(d.getDate() - day + 1 + (period === "last_week" ? -7 : 0)); const e = new Date(d); e.setDate(e.getDate() + 6); return { startTs: d.getTime(), endTs: finish(e) }; }
+  if (period === "last_month") { const d = new Date(now.getFullYear(), now.getMonth() - 1, 1); return { startTs: d.getTime(), endTs: finish(new Date(now.getFullYear(), now.getMonth(), 0)) }; }
+  if (period === "quarter") { const d = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1); return { startTs: d.getTime(), endTs: finish(new Date(d.getFullYear(), d.getMonth() + 3, 0)) }; }
+  return { startTs: new Date(now.getFullYear(), 0, 1).getTime(), endTs: finish(now) };
+}
 
 function formatAmount(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}م`;
@@ -45,10 +63,17 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function BranchComparison() {
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
+  const [monthSearch, setMonthSearch] = useState("");
+  const [period, setPeriod] = useState<ComparisonPeriod>("month");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const selectedRange = period === "month" ? {} : comparisonRange(period, customStart, customEnd);
+  const { data: filterOpts } = trpc.sheets.filterOptions.useQuery({});
+  const visibleMonths = (filterOpts?.availableMonthYears ?? []).filter((m: string) => m.toLowerCase().includes(monthSearch.toLowerCase()));
   const [refetchKey, setRefetchKey] = useState(0);
 
   const { data, isLoading, refetch } = trpc.sheets.branchComparison.useQuery(
-    { month: selectedMonth },
+    { month: period === "month" ? selectedMonth : undefined, startTs: selectedRange.startTs, endTs: selectedRange.endTs },
     { refetchInterval: 60_000, queryHash: String(refetchKey) }
   );
 
@@ -81,17 +106,30 @@ export default function BranchComparison() {
               }
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <input value={monthSearch} onChange={(e) => setMonthSearch(e.target.value)} placeholder="بحث داخل الشهور" className="h-9 w-36 rounded-md border border-input bg-background px-2 text-sm" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {COMPARISON_PERIODS.map((option) => (
+                <button key={option.value} type="button" onClick={() => { setCustomStart(""); setCustomEnd(""); setPeriod(option.value); }} className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${period === option.value ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-accent"}`}>{option.label}</button>
+              ))}
+            </div>
+            {period === "custom" && <>
+              <span className="text-sm text-muted-foreground">من تاريخ</span><input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm" />
+              <span className="text-sm text-muted-foreground">إلى تاريخ</span><input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm" />
+            </>}
             <Select
               value={selectedMonth ?? "current"}
-              onValueChange={(v) => setSelectedMonth(v === "current" ? undefined : v)}
+              onValueChange={(v) => { setSelectedMonth(v === "current" ? undefined : v); setPeriod("month"); }}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="الشهر الحالي" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="current">الشهر الحالي</SelectItem>
-                {ARABIC_MONTHS.map((m) => (
+                {visibleMonths.map((m: string) => (
                   <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>

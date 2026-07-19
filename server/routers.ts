@@ -240,18 +240,30 @@ export const appRouter = router({
 
     /** مقارنة الفروع */
     branchComparison: ownerProcedure
-      .input(z.object({ monthYear: z.string().optional(), month: z.string().optional() }))
+      .input(z.object({ monthYear: z.string().optional(), month: z.string().optional(), startTs: z.number().optional(), endTs: z.number().optional() }))
       .query(async ({ input }) => {
+        const isCustomRange = input.startTs !== undefined && input.endTs !== undefined;
         const currentMY: MonthYear = input.monthYear ?? resolveMonthYear({ month: input.month }) ?? getCurrentMonthYear();
         const meta = getComparisonMeta(currentMY);
         const prevMY = meta.prevMonthYear;
 
-        const [currentRows, prevRows] = await Promise.all([
-          getAllBranchesData(currentMY),
-          prevMY ? getAllBranchesData(prevMY) : Promise.resolve([]),
-        ]);
+        const [currentRows, prevRows] = isCustomRange
+          ? await (async () => {
+              const allRows = await getAllBranchesData();
+              const rangeLength = input.endTs! - input.startTs! + 24 * 60 * 60 * 1000;
+              const previousStart = input.startTs! - rangeLength;
+              const previousEnd = input.startTs! - 1;
+              return [
+                allRows.filter((r) => !r.dateTs || (r.dateTs >= input.startTs! && r.dateTs <= input.endTs!)),
+                allRows.filter((r) => !r.dateTs || (r.dateTs >= previousStart && r.dateTs <= previousEnd)),
+              ] as const;
+            })()
+          : await Promise.all([
+              getAllBranchesData(currentMY),
+              prevMY ? getAllBranchesData(prevMY) : Promise.resolve([]),
+            ]);
 
-        const filteredPrevRows = meta.isCurrentMonth
+        const filteredPrevRows = !isCustomRange && meta.isCurrentMonth
           ? filterSamePeriod(prevRows, meta.todayDay)
           : prevRows;
 

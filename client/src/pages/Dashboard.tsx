@@ -7,7 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area,
 } from "recharts";
-import { TrendingUp, Banknote, FileText, Building2, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { TrendingUp, Banknote, FileText, Building2, Loader2, AlertCircle, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ===== ألوان الرسوم البيانية =====
@@ -90,7 +90,12 @@ const ARABIC_MONTHS_MAP: Record<number, string> = {
 };
 
 // ===== حساب الفترات الزمنية =====
-type Period = "today" | "week" | "month" | "last_month" | "quarter" | "year" | "all" | "custom";
+type Period = "all" | "today" | "yesterday" | "week" | "last_week" | "month" | "last_month" | "quarter" | "year" | "custom";
+const DASHBOARD_PERIODS: Array<{ value: Period; label: string }> = [
+  { value: "all", label: "كل الفترات" }, { value: "today", label: "اليوم" }, { value: "yesterday", label: "أمس" },
+  { value: "week", label: "هذا الأسبوع" }, { value: "last_week", label: "الأسبوع الماضي" }, { value: "month", label: "هذا الشهر" },
+  { value: "last_month", label: "الشهر الماضي" }, { value: "quarter", label: "هذا الربع" }, { value: "year", label: "هذه السنة" }, { value: "custom", label: "نطاق مخصص" },
+];
 
 function getPeriodRange(period: Period, customFrom?: string, customTo?: string): { startTs?: number; endTs?: number; month?: string; label: string } {
   const now = new Date();
@@ -106,6 +111,17 @@ function getPeriodRange(period: Period, customFrom?: string, customTo?: string):
       const diff = day === 0 ? 6 : day - 1;
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
       return { startTs: start.getTime(), endTs: endOfDay.getTime(), label: "هذا الأسبوع" };
+    }
+    case "yesterday": {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59, 59, 999);
+      return { startTs: start.getTime(), endTs: end.getTime(), label: "أمس" };
+    }
+    case "last_week": {
+      const day = now.getDay() || 7;
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day - 6);
+      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6, 23, 59, 59, 999);
+      return { startTs: start.getTime(), endTs: end.getTime(), label: "الأسبوع الماضي" };
     }
     case "month": {
       // إرسال اسم الشهر العربي مباشرة — يُحمَّل تبويب الشهر كاملاً بدون فلترة تاريخ
@@ -165,6 +181,8 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   const [period, setPeriod] = useState<Period>("month");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [monthSearch, setMonthSearch] = useState("");
   const [branch, setBranch] = useState<string>("all");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
@@ -178,8 +196,9 @@ export default function Dashboard() {
     startTs,
     endTs,
     month: periodMonth,
+    monthYear: period === "month" ? (selectedMonth || undefined) : undefined,
     branch: branch !== "all" ? branch : undefined,
-  }), [startTs, endTs, periodMonth, branch]);
+  }), [startTs, endTs, periodMonth, selectedMonth, period, branch]);
 
   const utils = trpc.useUtils();
 
@@ -189,6 +208,8 @@ export default function Dashboard() {
   );
   const { data: filterOpts } = trpc.sheets.filterOptions.useQuery({});
   const { data: monthInfo } = trpc.sheets.currentMonth.useQuery();
+  const availableMonths = filterOpts?.availableMonthYears ?? [];
+  const visibleMonths = availableMonths.filter((m: string) => m.toLowerCase().includes(monthSearch.toLowerCase()));
 
   const handleRefresh = () => {
     utils.sheets.dashboardStats.invalidate();
@@ -243,6 +264,24 @@ export default function Dashboard() {
             تحديث
           </Button>
           {/* فلتر الفترة الزمنية */}
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <input value={monthSearch} onChange={(e) => setMonthSearch(e.target.value)} placeholder="بحث داخل الشهور" className="h-9 w-36 rounded-md border border-input bg-card px-2 text-sm" />
+            <Select value={selectedMonth || "none"} onValueChange={(v) => { if (v !== "none") { setSelectedMonth(v); setPeriod("month"); } }}>
+              <SelectTrigger className="w-36 bg-card"><SelectValue placeholder="الشهر" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">اختر الشهر</SelectItem>
+                {visibleMonths.map((m: string) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {DASHBOARD_PERIODS.map((option) => (
+              <button key={option.value} type="button" onClick={() => { setCustomFrom(""); setCustomTo(""); if (option.value === "month") setSelectedMonth(monthInfo?.monthYear ?? ""); setPeriod(option.value); }} className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${period === option.value ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-accent"}`}>
+                {option.label}
+              </button>
+            ))}
+          </div>
           <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
             <SelectTrigger className="w-40 bg-card">
               <SelectValue />
