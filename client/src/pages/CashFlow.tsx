@@ -180,7 +180,7 @@ function CashCard({ branch, balance }: { branch: string; balance: number }) {
   const BranchIcon = branchIcon(branch);
 
   return (
-    <Card className="border-border/70">
+    <Card className="border-2 border-black shadow-md">
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-2">
           <p className="text-lg font-bold text-blue-700">{branch}</p>
