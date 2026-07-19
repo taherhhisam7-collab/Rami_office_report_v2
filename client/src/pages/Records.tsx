@@ -147,7 +147,7 @@ function PaymentBadge({ method }: { method: string }) {
 }
 function SummaryCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <Card><CardContent className="p-3">
+    <Card className="border-2 border-black shadow-md"><CardContent className="p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-lg font-bold mt-0.5">{value}</p>
       {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}

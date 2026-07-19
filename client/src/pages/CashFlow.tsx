@@ -194,7 +194,7 @@ function CashCard({ branch, balance }: { branch: string; balance: number }) {
 
 function ActualBalances() {
   return (
-    <Card className="border-orange-200 bg-orange-50/40">
+    <Card className="border-2 border-black bg-orange-50/40 shadow-md">
       <CardContent className="p-3">
         <p className="text-center text-4xl font-bold text-blue-700">رصيد اليوم للفروع</p>
       </CardContent>
