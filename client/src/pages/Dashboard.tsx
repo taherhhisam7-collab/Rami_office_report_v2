@@ -283,7 +283,7 @@ export default function Dashboard() {
             ))}
           </div>
           <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-            <SelectTrigger className="w-40 bg-card">
+            <SelectTrigger className="hidden">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
