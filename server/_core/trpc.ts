@@ -30,6 +30,11 @@ export const protectedProcedure = t.procedure.use(requireUser);
 const OWNER_EMAIL = "taherhhisam7@gmail.com";
 const FULL_ACCESS_EMAILS = new Set([OWNER_EMAIL, "m.binzaqr@gmail.com"]);
 
+/** Manager access is controlled on the server so every client follows one source of truth. */
+export function hasFullAccessEmail(email: string | null | undefined): boolean {
+  return !!email && FULL_ACCESS_EMAILS.has(email.trim().toLowerCase());
+}
+
 const requireOwner = t.middleware(async opts => {
   const { ctx, next } = opts;
 
@@ -50,7 +55,7 @@ export const ownerProcedure = t.procedure.use(requireOwner);
 const requireFullAccess = t.middleware(async opts => {
   const { ctx, next } = opts;
 
-  if (!ctx.user || !ctx.user.email || !FULL_ACCESS_EMAILS.has(ctx.user.email.toLowerCase())) {
+  if (!ctx.user || !hasFullAccessEmail(ctx.user.email)) {
     throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
   }
 

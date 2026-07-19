@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { fullAccessProcedure, ownerProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { fullAccessProcedure, hasFullAccessEmail, ownerProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { commissionRates, type CommissionRate } from "../drizzle/schema";
 import { buildCommissionReport, ensureCommissionRatesSeeded } from "./commissions";
@@ -113,7 +113,12 @@ function resolveMonthYear(input: { month?: string; monthYear?: string; startTs?:
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts => {
+      const user = opts.ctx.user;
+      return user
+        ? { ...user, canAccessManagerDashboard: hasFullAccessEmail(user.email) }
+        : null;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

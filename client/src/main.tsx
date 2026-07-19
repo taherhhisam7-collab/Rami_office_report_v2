@@ -28,6 +28,36 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
     });
   });
 }
+
+// A user who leaves the app open receives a newly deployed build automatically.
+// This avoids asking anyone to hard-refresh after a Render deployment.
+async function reloadWhenNewBuildIsAvailable() {
+  if (!import.meta.env.PROD) return;
+
+  try {
+    const response = await fetch("/", { cache: "no-store" });
+    if (!response.ok) return;
+
+    const html = await response.text();
+    const latestBundle = html.match(/<script[^>]+type=["']module["'][^>]+src=["']([^"']+)["']/i)?.[1];
+    const activeBundle = document.querySelector<HTMLScriptElement>('script[type="module"][src]')?.src;
+
+    if (
+      latestBundle &&
+      activeBundle &&
+      new URL(latestBundle, window.location.origin).pathname !== new URL(activeBundle).pathname
+    ) {
+      window.location.reload();
+    }
+  } catch {
+    // Keep the current screen usable if a transient network request fails.
+  }
+}
+
+if (import.meta.env.PROD) {
+  window.setTimeout(() => void reloadWhenNewBuildIsAvailable(), 3_000);
+  window.setInterval(() => void reloadWhenNewBuildIsAvailable(), 5 * 60_000);
+}
 import { getLoginUrl } from "./const";
 import "./index.css";
 

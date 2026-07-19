@@ -14,15 +14,12 @@ import { useAuth } from "./_core/hooks/useAuth";
 import InstallPrompt from "./components/InstallPrompt";
 import { useEffect } from "react";
 
-const OWNER_EMAIL = "taherhhisam7@gmail.com";
-const FULL_ACCESS_EMAILS = new Set([OWNER_EMAIL, "m.binzaqr@gmail.com"]);
-
 /** حماية المسارات الخاصة بالادمن: إذا كان المستخدم عاديًا يعيده إلى /records */
 function AdminRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return null; // DashboardLayout تتولى شاشة تسجيل الدخول
-  if (!user.email || !FULL_ACCESS_EMAILS.has(user.email.toLowerCase())) return <Redirect to="/records" />;
+  if (!user.canAccessManagerDashboard) return <Redirect to="/records" />;
   return <Component />;
 }
 
