@@ -89,7 +89,8 @@ export const SHEETS_CONFIG = [
   {
     branch: "المدينة",
     spreadsheetId: "1RAVd4h1fxr-i4Bwlw7m867JWsnWvLU0uw7e0WKTOoR4",
-    colMap: { receiptNo: 1, date: 2, customerName: 3, service: 4, amount: 5, paymentMethod: 6, employee: 7, notes: 8 },
+    // المدينة stores the employee in column I and notes in column H.
+    colMap: { receiptNo: 1, date: 2, customerName: 3, service: 4, amount: 5, paymentMethod: 6, employee: 8, notes: 7 },
     dataStartRow: 5,
     defaultEmployee: "",
   },
@@ -122,6 +123,14 @@ export type NewReceipt = {
 
 /** Convert a database receipt to the shape consumed by the existing dashboard. */
 function receiptToSheetRow(row: typeof receipts.$inferSelect): SheetRow {
+  // Older imports read the المدينة employee column one position early, so
+  // زياد was saved in notes while employee became "لا يوجد". Normalize those
+  // historical rows at read time until the next month sync rewrites them.
+  const legacyMedinaEmployee =
+    row.branch === "المدينة" &&
+    (!row.employee || row.employee === "لا يوجد") &&
+    row.notes?.trim() === "زياد";
+
   return {
     branch: row.branch,
     sheetName: "",
@@ -132,8 +141,8 @@ function receiptToSheetRow(row: typeof receipts.$inferSelect): SheetRow {
     service: row.service,
     amount: Number(row.amount),
     paymentMethod: row.paymentMethod,
-    employee: row.employee ?? "لا يوجد",
-    notes: row.notes ?? "",
+    employee: legacyMedinaEmployee ? "زياد" : (row.employee ?? "لا يوجد"),
+    notes: legacyMedinaEmployee ? "" : (row.notes ?? ""),
   };
 }
 
