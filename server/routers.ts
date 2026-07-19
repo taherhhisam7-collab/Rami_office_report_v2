@@ -407,7 +407,7 @@ export const appRouter = router({
       })),
 
     /** Refreshes one selected period. Restricted to the owner/admin. */
-    syncMonth: ownerProcedure
+    syncMonth: protectedProcedure
       .input(z.object({ monthYear: z.string().optional() }))
       .mutation(async ({ input }) => {
         const monthYear = input.monthYear ?? getCurrentMonthYear();

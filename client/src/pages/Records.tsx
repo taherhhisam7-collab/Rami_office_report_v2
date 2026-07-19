@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -391,7 +390,6 @@ function DateSortButton({ dir, onToggle }: { dir: SortDir; onToggle: () => void 
 
 // ===== الصفحة الرئيسية =====
 export default function Records() {
-  const { user } = useAuth();
   const utils = trpc.useUtils();
   const syncDataMutation = trpc.sheets.syncMonth.useMutation({
     onSuccess: async () => {
@@ -551,18 +549,16 @@ export default function Records() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {user?.role === "admin" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => syncDataMutation.mutate({})}
-              disabled={syncDataMutation.isPending}
-              className="flex items-center gap-2 border-amber-500 bg-amber-400 text-amber-950 hover:bg-amber-500 hover:text-amber-950"
-            >
-              <RefreshCw className={`h-4 w-4 ${syncDataMutation.isPending ? "animate-spin" : ""}`} />
-              تحديث البيانات
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => syncDataMutation.mutate({})}
+            disabled={syncDataMutation.isPending}
+            className="flex items-center gap-2 border-amber-500 bg-amber-400 text-amber-950 hover:bg-amber-500 hover:text-amber-950"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncDataMutation.isPending ? "animate-spin" : ""}`} />
+            تحديث البيانات
+          </Button>
           {activeFiltersCount > 0 && (
             <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-xs text-destructive hover:text-destructive flex items-center gap-1">
               <X className="h-3.5 w-3.5" /> مسح كل الفلاتر
