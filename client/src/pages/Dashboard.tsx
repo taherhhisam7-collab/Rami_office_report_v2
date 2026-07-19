@@ -429,31 +429,39 @@ export default function Dashboard() {
       {/* ===== الرسوم البيانية - الصف الثاني ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* الإيرادات حسب الخدمة */}
-        <ChartCard title="الإيرادات حسب الخدمة">
+        <ChartCard title="الإيرادات حسب الخدمة" contentClassName="rounded-b-xl bg-white">
           {s.byService.length === 0 ? <EmptyChart /> : (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                data={s.byService.slice(0, 10)}
-                layout="vertical"
-                margin={{ top: 8, right: 20, left: 105, bottom: 8 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis type="number" tickFormatter={formatAmount} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} />
-                <YAxis
-                  type="category"
-                  dataKey="key"
-                  width={150}
-                  tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }}
-                  tickFormatter={(v) => v.length > 18 ? v.slice(0, 18) + "…" : v}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="total" radius={[0, 6, 6, 0]}>
-                  {s.byService.slice(0, 10).map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            (() => {
+              const services = s.byService.slice(0, 10);
+              const maxTotal = Math.max(...services.map((service) => service.total), 1);
+              return (
+                <div className="space-y-2.5 p-1" dir="rtl">
+                  {services.map((service, index) => {
+                    const color = CHART_COLORS[index % CHART_COLORS.length];
+                    const percent = Math.max(4, Math.round((service.total / maxTotal) * 100));
+                    return (
+                      <div key={service.key} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ backgroundColor: color }}>
+                              {index + 1}
+                            </span>
+                            <span className="truncate text-sm font-bold text-slate-900" title={service.key}>{service.key}</span>
+                          </div>
+                          <div className="shrink-0 text-left">
+                            <p className="text-sm font-bold text-emerald-700">{formatAmountFull(service.total)}</p>
+                            <p className="text-xs text-slate-500">{service.count.toLocaleString("ar-SA")} سند</p>
+                          </div>
+                        </div>
+                        <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${percent}%`, backgroundColor: color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
           )}
         </ChartCard>
 
