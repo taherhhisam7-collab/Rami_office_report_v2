@@ -11,19 +11,19 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "/app-logo.png",
+      "src": "/app-logo-v2.png",
       "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/app-logo.png",
+      "src": "/app-logo-v2.png",
       "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/app-logo.png",
+      "src": "/app-logo-v2.png",
       "sizes": "any",
       "type": "image/png"
     }

@@ -181,7 +181,7 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed && (
                 <div className="flex items-center gap-2 min-w-0">
-                  <img src="/app-logo.png" alt="شعار سندات القبض" className="h-9 w-9 rounded-lg bg-white object-contain" />
+                  <img src="/app-logo-v2.png" alt="شعار سندات القبض" className="h-9 w-9 rounded-lg bg-white object-contain" />
                   <div className="flex flex-col min-w-0">
                   <span className="font-bold text-sidebar-foreground text-sm truncate">
                     سندات القبض
