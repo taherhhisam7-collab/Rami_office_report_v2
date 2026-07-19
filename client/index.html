@@ -32,6 +32,19 @@
         margin: 0 auto !important;
         object-fit: contain;
       }
+      #app-boot-fallback {
+        display: none;
+        position: fixed;
+        left: 50%;
+        bottom: 12vh;
+        transform: translateX(-50%);
+        padding: 12px 20px;
+        border-radius: 10px;
+        background: #1e1b4b;
+        color: white;
+        font: 600 15px Tajawal, Arial, sans-serif;
+        text-decoration: none;
+      }
     </style>
   </head>
 
@@ -43,6 +56,7 @@
         <div style="font-size:18px;font-weight:700">جاري تحميل التطبيق…</div>
         <div id="app-boot-message" style="font-size:13px;color:#64748b;margin-top:8px">يرجى الانتظار لحظات</div>
       </div>
+      <a id="app-boot-fallback" href="/api/oauth/google/login">&#1578;&#1587;&#1580;&#1610;&#1604; &#1575;&#1604;&#1583;&#1582;&#1608;&#1604;</a>
     </div>
     <script>
       window.setTimeout(function () {
@@ -51,6 +65,13 @@
           message.textContent = "إذا لم تفتح الصفحة، اضغط تحديث مرة واحدة";
         }
       }, 10000);
+    </script>
+    <script>
+      window.setTimeout(function () {
+        if (window.__APP_BOOTED__) return;
+        var fallback = document.getElementById("app-boot-fallback");
+        if (fallback) fallback.style.display = "inline-flex";
+      }, 8000);
     </script>
     <script type="module" src="/src/main.tsx"></script>
     <script
