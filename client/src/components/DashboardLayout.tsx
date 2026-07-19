@@ -129,9 +129,7 @@ function DashboardLayoutContent({
   const isMobile = useIsMobile();
   const isOwner = user?.email === OWNER_EMAIL;
   const baseMenuItems = isOwner ? adminMenuItems : userMenuItems;
-  const menuItems = isOwner
-    ? [...baseMenuItems, { icon: Wallet, label: "عمولات الموظفين", path: "/commissions" }]
-    : baseMenuItems;
+  const menuItems = baseMenuItems;
   const activeMenuItem = menuItems.find((item) => item.path === location);
 
   const clearCacheMutation = trpc.sheets.clearCache.useMutation({

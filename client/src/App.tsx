@@ -10,7 +10,6 @@ import Records from "./pages/Records";
 import CashFlow from "./pages/CashFlow";
 import BranchComparison from "./pages/BranchComparison";
 import GrowthReport from "./pages/GrowthReport";
-import Commissions from "./pages/Commissions";
 import { useAuth } from "./_core/hooks/useAuth";
 import InstallPrompt from "./components/InstallPrompt";
 
@@ -25,15 +24,6 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   return <Component />;
 }
 
-/** حماية مسار العمولات: للمالك فقط */
-function OwnerRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  if (!user) return null;
-  if (user.email !== OWNER_EMAIL) return <Redirect to="/records" />;
-  return <Component />;
-}
-
 function Router() {
   return (
     <DashboardLayout>
@@ -43,7 +33,6 @@ function Router() {
         <Route path="/cash-flow" component={CashFlow} />
         <Route path="/branch-comparison" component={() => <AdminRoute component={BranchComparison} />} />
         <Route path="/growth-report" component={() => <AdminRoute component={GrowthReport} />} />
-        <Route path="/commissions" component={() => <OwnerRoute component={Commissions} />} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
