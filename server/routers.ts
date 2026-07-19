@@ -290,6 +290,8 @@ export const appRouter = router({
         selectedMonth: z.string().optional(),
         selectedMonthYear: z.string().optional(),
         branch: z.string().optional(),
+        startTs: z.number().optional(),
+        endTs: z.number().optional(),
       }))
       .query(async ({ input }) => {
         // جلب الأشهر المتاحة مع سنواتها
@@ -301,6 +303,7 @@ export const appRouter = router({
           availableMonthYears = [getCurrentMonthYear()];
         }
 
+        const isCustomRange = input.startTs !== undefined && input.endTs !== undefined;
         const currentMY: MonthYear = input.selectedMonthYear
           ?? resolveMonthYear({ month: input.selectedMonth })
           ?? getCurrentMonthYear();
@@ -309,12 +312,23 @@ export const appRouter = router({
         const prevMY = meta.prevMonthYear;
         const prevMonthExists = prevMY ? availableMonthYears.includes(prevMY) : false;
 
-        const [currentRows, prevRows] = await Promise.all([
-          getAllBranchesData(currentMY),
-          prevMonthExists && prevMY ? getAllBranchesData(prevMY) : Promise.resolve([]),
-        ]);
+        const [currentRows, prevRows] = isCustomRange
+          ? await (async () => {
+              const allRows = await getAllBranchesData();
+              const rangeLength = input.endTs! - input.startTs! + 24 * 60 * 60 * 1000;
+              const previousStart = input.startTs! - rangeLength;
+              const previousEnd = input.startTs! - 1;
+              return [
+                allRows.filter((r) => !r.dateTs || (r.dateTs >= input.startTs! && r.dateTs <= input.endTs!)),
+                allRows.filter((r) => !r.dateTs || (r.dateTs >= previousStart && r.dateTs <= previousEnd)),
+              ] as const;
+            })()
+          : await Promise.all([
+              getAllBranchesData(currentMY),
+              prevMonthExists && prevMY ? getAllBranchesData(prevMY) : Promise.resolve([]),
+            ]);
 
-        const filteredPrevRows = meta.isCurrentMonth
+        const filteredPrevRows = !isCustomRange && meta.isCurrentMonth
           ? filterSamePeriod(prevRows, meta.todayDay)
           : prevRows;
 

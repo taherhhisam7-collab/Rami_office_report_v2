@@ -7,7 +7,7 @@ import {
   PieChart, Pie, Cell, Legend,
   BarChart, Bar, ReferenceLine, LabelList,
 } from "recharts";
-import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart2, Loader2, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart2, Loader2, AlertCircle, Search } from "lucide-react";
 
 // ===== ألوان الفروع =====
 const BRANCH_COLORS: Record<string, { bg: string; text: string; light: string }> = {
@@ -94,10 +94,16 @@ function WaterfallTooltip({ active, payload, label }: any) {
 export default function GrowthReport() {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [branch, setBranch] = useState<string>("all");
+  const [customRange, setCustomRange] = useState(false);
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+
+  const customStartTs = customRange && customStart ? new Date(`${customStart}T00:00:00`).getTime() : undefined;
+  const customEndTs = customRange && customEnd ? new Date(`${customEnd}T23:59:59.999`).getTime() : undefined;
 
   // جلب بيانات تقرير النمو
   const { data, isLoading, error } = trpc.sheets.growthReport.useQuery(
-    { selectedMonth: selectedMonth || undefined, branch: branch === "all" ? undefined : branch },
+    { selectedMonth: customRange ? undefined : (selectedMonth || undefined), branch: branch === "all" ? undefined : branch, startTs: customStartTs, endTs: customEndTs },
     { staleTime: 30_000 }
   );
 
@@ -177,9 +183,11 @@ export default function GrowthReport() {
 
         {/* ===== فلاتر ===== */}
         <div className="flex flex-wrap gap-3">
-          <Select
-            value={selectedMonth || currentMonth}
-            onValueChange={(v) => setSelectedMonth(v)}
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <Select
+            value={customRange ? "custom" : (selectedMonth || currentMonth)}
+            onValueChange={(v) => { setCustomRange(v === "custom"); if (v !== "custom") setSelectedMonth(v); }}
           >
             <SelectTrigger className="w-36 h-9">
               <SelectValue placeholder="الشهر" />
@@ -188,8 +196,16 @@ export default function GrowthReport() {
               {availableMonths.map((m: string) => (
                 <SelectItem key={m} value={m}>{m}</SelectItem>
               ))}
+              <SelectItem value="custom">نطاق مخصص</SelectItem>
             </SelectContent>
           </Select>
+          </div>
+          {customRange && (
+            <>
+              <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm" aria-label="من تاريخ" />
+              <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm" aria-label="إلى تاريخ" />
+            </>
+          )}
 
           <Select value={branch} onValueChange={setBranch}>
             <SelectTrigger className="w-36 h-9">
