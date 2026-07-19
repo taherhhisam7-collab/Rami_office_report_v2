@@ -6,6 +6,12 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 
+declare global {
+  interface Window {
+    __APP_BOOTED__?: boolean;
+  }
+}
+
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
     // Remove workers/caches from older deployments before registering the
@@ -96,3 +102,6 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+// Tell the static boot screen that React has successfully mounted.
+window.__APP_BOOTED__ = true;
