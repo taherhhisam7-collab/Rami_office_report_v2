@@ -333,8 +333,8 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={s.byBranch} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="key" tick={{ fontSize: 12, fontFamily: "Tajawal" }} />
-                <YAxis tickFormatter={formatAmount} tick={{ fontSize: 11, fontFamily: "Tajawal" }} width={55} />
+                <XAxis dataKey="key" tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "#111827" }} />
+                <YAxis tickFormatter={formatAmount} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} width={55} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                   {s.byBranch.map((_, i) => (
@@ -387,12 +387,12 @@ export default function Dashboard() {
                 margin={{ top: 5, right: 15, left: 10, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis type="number" tickFormatter={formatAmount} tick={{ fontSize: 11, fontFamily: "Tajawal" }} />
+                <XAxis type="number" tickFormatter={formatAmount} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} />
                 <YAxis
                   type="category"
                   dataKey="key"
                   width={130}
-                  tick={{ fontSize: 11, fontFamily: "Tajawal" }}
+                  tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }}
                   tickFormatter={(v) => v.length > 18 ? v.slice(0, 18) + "…" : v}
                 />
                 <Tooltip content={<CustomTooltip />} />
@@ -420,12 +420,12 @@ export default function Dashboard() {
                 margin={{ top: 5, right: 130, left: 10, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis type="number" tickFormatter={formatAmountFull} tick={{ fontSize: 11, fontFamily: "Tajawal" }} />
+                <XAxis type="number" tickFormatter={formatAmountFull} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} />
                 <YAxis
                   type="category"
                   dataKey="key"
                   width={160}
-                  tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "var(--foreground)", fontWeight: 600 }}
+                  tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "#111827", fontWeight: 600 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: string) => v}
@@ -452,7 +452,7 @@ export default function Dashboard() {
                     return (
                       <g>
                         <text x={x + width + 6} y={y + height / 2} dominantBaseline="middle"
-                          fill="var(--foreground)" fontSize={11} fontFamily="Tajawal" fontWeight="600">
+                          fill="#111827" fontSize={11} fontFamily="Tajawal" fontWeight="600">
                           {amtStr}
                         </text>
                       </g>

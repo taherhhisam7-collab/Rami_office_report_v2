@@ -273,11 +273,11 @@ export default function GrowthReport() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="month"
-                    tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }}
                   />
                   <YAxis
                     tickFormatter={formatAmount}
-                    tick={{ fontSize: 10, fontFamily: "Tajawal", fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fontSize: 10, fontFamily: "Tajawal", fill: "#111827" }}
                     width={60}
                   />
                   <Tooltip content={<CustomTooltip />} />
@@ -352,7 +352,7 @@ export default function GrowthReport() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="branch"
-                  tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "#111827" }}
                 />
                 <YAxis
                   tickFormatter={formatAmount}
