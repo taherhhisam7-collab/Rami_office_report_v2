@@ -258,6 +258,24 @@ function parseAmount(raw: string): number {
 type CacheEntry = { data: SheetRow[]; fetchedAt: number };
 const cache = new Map<string, CacheEntry>();
 const inflightRequests = new Map<string, Promise<SheetRow[]>>();
+// Google enforces a per-user read quota.  Once it answers with 429, stop
+// issuing more requests for a short window instead of creating a retry storm
+// every time several dashboard queries render at once.
+let sheetsRateLimitUntil = 0;
+const SHEETS_RATE_LIMIT_COOLDOWN_MS = 60_000;
+const SHEET_NAMES_CACHE_TTL = 10 * 60 * 1000;
+const sheetNamesCache = new Map<string, { names: string[]; fetchedAt: number }>();
+
+function markSheetsRateLimited() {
+  sheetsRateLimitUntil = Math.max(
+    sheetsRateLimitUntil,
+    Date.now() + SHEETS_RATE_LIMIT_COOLDOWN_MS,
+  );
+}
+
+function sheetsRateLimitActive() {
+  return Date.now() < sheetsRateLimitUntil;
+}
 
 function getCacheTTL(sheetName: string): number {
   const current = getCurrentArabicMonth();
@@ -279,12 +297,19 @@ function getAuth() {
 
 // ===== جلب أسماء التبويبات =====
 async function getSheetNames(spreadsheetId: string): Promise<string[]> {
+  const cached = sheetNamesCache.get(spreadsheetId);
+  if (cached && Date.now() - cached.fetchedAt < SHEET_NAMES_CACHE_TTL) {
+    return cached.names;
+  }
+  if (sheetsRateLimitActive()) return cached?.names ?? [];
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
-  return (meta.data.sheets ?? [])
+  const names = (meta.data.sheets ?? [])
     .map((s) => s.properties?.title ?? "")
     .filter(Boolean);
+  sheetNamesCache.set(spreadsheetId, { names, fetchedAt: Date.now() });
+  return names;
 }
 
 /** جلب أسماء الأشهر العربية المتاحة من أول فرع (public) */
@@ -299,6 +324,10 @@ async function fetchSheetRows(
   config: (typeof SHEETS_CONFIG)[number],
   sheetName: string
 ): Promise<SheetRow[]> {
+  if (sheetsRateLimitActive()) {
+    console.warn(`[Sheets] Read cooldown active; skipping ${config.branch}/${sheetName}`);
+    return [];
+  }
   const cacheKey = `${config.spreadsheetId}:${sheetName}`;
   const cached = cache.get(cacheKey);
   const ttl = getCacheTTL(sheetName);
@@ -332,10 +361,12 @@ async function fetchSheetRows(
             (err?.message ?? "").toLowerCase().includes("rate") ||
             (err?.message ?? "").toLowerCase().includes("quota");
           if (isRateLimit && attempt < maxRetries) {
+            if (status === 429) markSheetsRateLimited();
             const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
             console.warn(`[Sheets] Rate limit hit for ${config.branch}/${sheetName}, retry ${attempt + 1}/${maxRetries} in ${Math.round(delay)}ms`);
             await new Promise((r) => setTimeout(r, delay));
           } else {
+            if (status === 429) markSheetsRateLimited();
             throw err;
           }
         }
@@ -597,8 +628,15 @@ async function getAvailableMonthYearsFromSheets(): Promise<MonthYear[]> {
 // ===== إضافة سند جديد إلى الشهر الحالي =====
 /** Manager-facing requests use the database, avoiding Google API calls per page view. */
 export async function getAllBranchesData(monthYearFilter?: MonthYear): Promise<SheetRow[]> {
-  const localRows = await getAllBranchesDataFromDatabase(monthYearFilter);
-  if (localRows !== null) return localRows;
+  try {
+    const localRows = await getAllBranchesDataFromDatabase(monthYearFilter);
+    if (localRows !== null) return localRows;
+  } catch (error) {
+    // A configured database must remain the source of truth. Falling back to
+    // Google here would turn one database outage into hundreds of API reads.
+    console.error("[Database] Failed to read receipts; Google fallback skipped:", error);
+    return [];
+  }
   console.warn("[Sheets] DATABASE_URL is not configured; falling back to Google Sheets.");
   return getAllBranchesDataFromSheets(monthYearFilter);
 }
@@ -608,8 +646,13 @@ export async function getCurrentMonthData(): Promise<SheetRow[]> {
 }
 
 export async function getAvailableMonthYears(): Promise<MonthYear[]> {
-  const localPeriods = await getAvailableMonthYearsFromDatabase();
-  return localPeriods ?? getAvailableMonthYearsFromSheets();
+  try {
+    const localPeriods = await getAvailableMonthYearsFromDatabase();
+    return localPeriods ?? getAvailableMonthYearsFromSheets();
+  } catch (error) {
+    console.error("[Database] Failed to read available periods; Google fallback skipped:", error);
+    return [];
+  }
 }
 
 /**
@@ -702,6 +745,14 @@ export async function importHistoricalSheetsToDatabase() {
 export function startCurrentMonthSync(intervalMs = 60 * 1000) {
   if (!process.env.DATABASE_URL || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     console.info("[Sheets] Automatic sync is disabled until DATABASE_URL and GOOGLE_SERVICE_ACCOUNT_JSON are configured.");
+    return;
+  }
+
+  // Do not spend the Google Sheets quota on every server restart by default.
+  // Historical data is already in Postgres; enable this opt-in scheduler only
+  // when Render has explicitly set ENABLE_GOOGLE_SHEETS_SYNC=true.
+  if (process.env.ENABLE_GOOGLE_SHEETS_SYNC !== "true") {
+    console.info("[Sheets] Automatic sync is disabled (set ENABLE_GOOGLE_SHEETS_SYNC=true to enable it).");
     return;
   }
 
