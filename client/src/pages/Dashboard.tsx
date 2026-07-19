@@ -464,60 +464,37 @@ export default function Dashboard() {
               لا توجد بيانات موظفين في هذه الفترة
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={Math.max(320, s.byEmployee.slice(0, 12).length * 52 + 30)}>
-              <BarChart
-                data={s.byEmployee.slice(0, 12).map((e, i) => ({ ...e, _colorIdx: i }))}
-                layout="vertical"
-                // Reserve room for Arabic names on the left and amount labels
-                // on the right so neither side is clipped on narrow cards.
-                margin={{ top: 8, right: 135, left: 185, bottom: 8 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis type="number" tickFormatter={formatAmountFull} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} />
-                <YAxis
-                  type="category"
-                  dataKey="key"
-                  width={155}
-                  tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "#111827", fontWeight: 600 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v: string) => v.length > 20 ? `${v.slice(0, 20)}…` : v}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
-                    const d = payload[0];
+            (() => {
+              const employees = s.byEmployee.slice(0, 12);
+              const maxTotal = Math.max(...employees.map((employee) => employee.total), 1);
+              return (
+                <div className="space-y-2.5 p-1" dir="rtl">
+                  {employees.map((employee, index) => {
+                    const color = EMPLOYEE_COLORS[index % EMPLOYEE_COLORS.length];
+                    const percent = Math.max(4, Math.round((employee.total / maxTotal) * 100));
                     return (
-                      <div className="bg-card border border-border rounded-lg p-3 shadow-lg text-sm">
-                        <p className="font-semibold text-foreground mb-1">{d.payload?.key}</p>
-                        <p style={{ color: d.color }} className="font-medium">{formatAmountFull(d.value as number)}</p>
-                        <p className="text-xs text-muted-foreground">{d.payload?.count} سند</p>
+                      <div key={employee.key} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: color.bg, color: color.text }}>
+                              {index + 1}
+                            </span>
+                            <span className="truncate text-sm font-bold text-slate-900" title={employee.key}>{employee.key}</span>
+                          </div>
+                          <div className="shrink-0 text-left">
+                            <p className="text-sm font-bold text-emerald-700">{formatAmountFull(employee.total)}</p>
+                            <p className="text-xs text-slate-500">{employee.count.toLocaleString("ar-SA")} سند</p>
+                          </div>
+                        </div>
+                        <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${percent}%`, backgroundColor: color.bg }} />
+                        </div>
                       </div>
                     );
-                  }}
-                />
-                <Bar dataKey="total" radius={[0, 6, 6, 0]} isAnimationActive={false}
-                  label={(props: any) => {
-                    const { x, y, width, height, value, index } = props;
-                    const emp = s.byEmployee.slice(0, 12)[index];
-                    if (!emp || height < 16) return <g />;
-                    const amtStr = formatAmountFull(value);
-                    return (
-                      <g>
-                        <text x={x + width + 6} y={y + height / 2} dominantBaseline="middle"
-                          fill="#111827" fontSize={11} fontFamily="Tajawal" fontWeight="600">
-                          {amtStr}
-                        </text>
-                      </g>
-                    );
-                  }}
-                >
-                  {s.byEmployee.slice(0, 12).map((_, i) => (
-                    <Cell key={i} fill={EMPLOYEE_COLORS[i % EMPLOYEE_COLORS.length].bg} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  })}
+                </div>
+              );
+            })()
           )}
         </ChartCard>
       </div>
