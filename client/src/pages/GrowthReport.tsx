@@ -9,6 +9,28 @@ import {
 } from "recharts";
 import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart2, Loader2, AlertCircle, Search } from "lucide-react";
 
+type GrowthPeriod = "all" | "today" | "yesterday" | "week" | "last_week" | "month" | "last_month" | "quarter" | "year" | "custom";
+const GROWTH_PERIODS: Array<{ value: GrowthPeriod; label: string }> = [
+  { value: "all", label: "كل الفترات" }, { value: "today", label: "اليوم" }, { value: "yesterday", label: "أمس" },
+  { value: "week", label: "هذا الأسبوع" }, { value: "last_week", label: "الأسبوع الماضي" }, { value: "month", label: "هذا الشهر" },
+  { value: "last_month", label: "الشهر الماضي" }, { value: "quarter", label: "هذا الربع" }, { value: "year", label: "هذه السنة" },
+  { value: "custom", label: "نطاق مخصص" },
+];
+function growthParse(value: string) { const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]); const m = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? new Date(+m[3], +m[2] - 1, +m[1]) : undefined; }
+function growthDayStart(d: Date) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+function growthDayEnd(d: Date) { return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).getTime(); }
+function growthRange(period: GrowthPeriod, start: string, end: string) {
+  const now = new Date(); const today = growthDayStart(now);
+  if (period === "custom") return { startTs: growthParse(start)?.getTime(), endTs: growthParse(end) ? growthDayEnd(growthParse(end)!) : undefined };
+  if (period === "all") return {};
+  if (period === "today") return { startTs: today, endTs: growthDayEnd(now) };
+  if (period === "yesterday") { const d = new Date(today); d.setDate(d.getDate() - 1); return { startTs: growthDayStart(d), endTs: growthDayEnd(d) }; }
+  if (period === "week" || period === "last_week") { const d = new Date(today); const day = d.getDay() || 7; d.setDate(d.getDate() - day + 1 + (period === "last_week" ? -7 : 0)); const e = new Date(d); e.setDate(e.getDate() + 6); return { startTs: growthDayStart(d), endTs: growthDayEnd(e) }; }
+  if (period === "month" || period === "last_month") { const offset = period === "last_month" ? -1 : 0; const d = new Date(now.getFullYear(), now.getMonth() + offset, 1); const e = new Date(d.getFullYear(), d.getMonth() + 1, 0); return { startTs: growthDayStart(d), endTs: growthDayEnd(e) }; }
+  if (period === "quarter") { const d = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1); const e = new Date(now.getFullYear(), d.getMonth() + 3, 0); return { startTs: growthDayStart(d), endTs: growthDayEnd(e) }; }
+  return { startTs: new Date(now.getFullYear(), 0, 1).getTime(), endTs: growthDayEnd(now) };
+}
+
 // ===== ألوان الفروع =====
 const BRANCH_COLORS: Record<string, { bg: string; text: string; light: string }> = {
   "جدة":     { bg: "#6366f1", text: "#ffffff", light: "#eef2ff" },
@@ -93,17 +115,18 @@ function WaterfallTooltip({ active, payload, label }: any) {
 
 export default function GrowthReport() {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [monthSearch, setMonthSearch] = useState("");
   const [branch, setBranch] = useState<string>("all");
-  const [customRange, setCustomRange] = useState(false);
+  const [period, setPeriod] = useState<GrowthPeriod>("month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
 
-  const customStartTs = customRange && customStart ? new Date(`${customStart}T00:00:00`).getTime() : undefined;
-  const customEndTs = customRange && customEnd ? new Date(`${customEnd}T23:59:59.999`).getTime() : undefined;
+  // اختيار شهر من القائمة يعتمد على selectedMonth؛ بقية الفترات تعتمد على نطاق زمني.
+  const selectedRange = period === "month" ? {} : growthRange(period, customStart, customEnd);
 
   // جلب بيانات تقرير النمو
   const { data, isLoading, error } = trpc.sheets.growthReport.useQuery(
-    { selectedMonth: customRange ? undefined : (selectedMonth || undefined), branch: branch === "all" ? undefined : branch, startTs: customStartTs, endTs: customEndTs },
+    { selectedMonth: period === "month" ? (selectedMonth || undefined) : undefined, branch: branch === "all" ? undefined : branch, startTs: selectedRange.startTs, endTs: selectedRange.endTs },
     { staleTime: 30_000 }
   );
 
@@ -113,6 +136,7 @@ export default function GrowthReport() {
   // تحديد الشهر الافتراضي
   const currentMonth = data?.currentMonth ?? filterOpts?.currentMonth ?? "";
   const availableMonths = data?.availableMonthYears ?? filterOpts?.availableMonthYears ?? [];
+  const visibleMonths = availableMonths.filter((m: string) => m.toLowerCase().includes(monthSearch.toLowerCase()));
 
   // بيانات Waterfall Chart
   const waterfallData = useMemo(() => {
@@ -185,22 +209,43 @@ export default function GrowthReport() {
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <input value={monthSearch} onChange={(e) => setMonthSearch(e.target.value)} placeholder="بحث داخل الشهور" className="h-9 w-36 rounded-md border border-input bg-background px-2 text-sm" />
             <Select
-            value={customRange ? "custom" : (selectedMonth || currentMonth)}
-            onValueChange={(v) => { setCustomRange(v === "custom"); if (v !== "custom") setSelectedMonth(v); }}
+            value={selectedMonth || currentMonth}
+            onValueChange={(v) => { setSelectedMonth(v); setPeriod("month"); }}
           >
             <SelectTrigger className="w-36 h-9">
               <SelectValue placeholder="الشهر" />
             </SelectTrigger>
             <SelectContent>
-              {availableMonths.map((m: string) => (
+              {visibleMonths.map((m: string) => (
                 <SelectItem key={m} value={m}>{m}</SelectItem>
               ))}
-              <SelectItem value="custom">نطاق مخصص</SelectItem>
             </SelectContent>
           </Select>
           </div>
-          {customRange && (
+          <div className="flex flex-wrap gap-2">
+            {GROWTH_PERIODS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  setCustomStart("");
+                  setCustomEnd("");
+                  if (option.value === "month") setSelectedMonth(currentMonth);
+                  setPeriod(option.value);
+                }}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                  period === option.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          {period === "custom" && (
             <>
               <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm" aria-label="من تاريخ" />
               <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm" aria-label="إلى تاريخ" />
