@@ -10,6 +10,7 @@ import {
   Loader2, Search, X, Download, Filter,
   ChevronRight, ChevronLeft, ChevronDown, Check,
   ArrowUp, ArrowDown, ArrowUpDown, Calendar, SlidersHorizontal, RefreshCw,
+  Banknote,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -145,12 +146,17 @@ function BranchBadge({ branch }: { branch: string }) {
 function PaymentBadge({ method }: { method: string }) {
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${PAYMENT_COLORS[method] ?? "bg-gray-100 text-gray-600"}`}>{method || "—"}</span>;
 }
-function SummaryCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function SummaryCard({ label, value, sub, icon: Icon = Banknote, iconClass = "bg-indigo-100 text-indigo-700" }: { label: string; value: string; sub?: string; icon?: typeof Banknote; iconClass?: string }) {
   return (
-    <Card className="border-2 border-black shadow-md"><CardContent className="p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-lg font-bold mt-0.5">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+    <Card className="border-2 border-black bg-white shadow-md"><CardContent className="p-4">
+      <div className="flex items-start gap-3">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconClass}`}><Icon className="h-5 w-5" /></span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-700">{label}</p>
+          <p className="mt-1 break-words text-xl font-bold leading-tight text-slate-950">{value}</p>
+          {sub && <p className="mt-1 text-xs text-slate-600">{sub}</p>}
+        </div>
+      </div>
     </CardContent></Card>
   );
 }
@@ -696,7 +702,7 @@ export default function Records() {
 
       {/* ===== بطاقات الملخص ===== */}
       {data && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <SummaryCard label="إجمالي المبالغ" value={formatAmountFull(data.totalAmount)} />
           <SummaryCard label="عدد السندات" value={data.total.toLocaleString("ar-SA")} />
           <SummaryCard label="متوسط السند" value={data.total > 0 ? formatAmountFull(data.totalAmount / data.total) : "—"} />
