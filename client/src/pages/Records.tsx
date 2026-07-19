@@ -680,7 +680,7 @@ export default function Records() {
           <div className="relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="بحث عام في الاسم، رقم السند، الخدمة، الموظف، الملاحظات..."
+              placeholder="بحث في كل الفترات: الاسم، رقم السند، الخدمة، الموظف، الملاحظات..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); resetPage(); }}
               className="pr-9 bg-background"

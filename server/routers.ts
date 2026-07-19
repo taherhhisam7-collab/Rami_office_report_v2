@@ -176,7 +176,9 @@ export const appRouter = router({
         // إذا كان هناك فترة زمنية مخصصة (startTs/endTs) نجلب كل البيانات ونفلتر
         // وإلا نجلب الشهر المحدد فقط
         let effectiveMonthYear: MonthYear | undefined;
-        if (!input.startTs && !input.endTs) {
+        // A general search is intentionally global across all historical
+        // periods. A selected custom date range still limits the search.
+        if (!input.startTs && !input.endTs && !input.search) {
           effectiveMonthYear = resolveMonthYear(input) ?? getCurrentMonthYear();
         }
 
