@@ -146,14 +146,14 @@ function BranchBadge({ branch }: { branch: string }) {
 function PaymentBadge({ method }: { method: string }) {
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${PAYMENT_COLORS[method] ?? "bg-gray-100 text-gray-600"}`}>{method || "—"}</span>;
 }
-function SummaryCard({ label, value, sub, icon: Icon = Banknote, iconClass = "bg-indigo-100 text-indigo-700" }: { label: string; value: string; sub?: string; icon?: typeof Banknote; iconClass?: string }) {
+function SummaryCard({ label, value, sub, icon: Icon = Banknote, iconClass = "bg-indigo-100 text-indigo-700", valueClass = "text-blue-700" }: { label: string; value: string; sub?: string; icon?: typeof Banknote; iconClass?: string; valueClass?: string }) {
   return (
     <Card className="border-2 border-black bg-white shadow-md"><CardContent className="p-4">
       <div className="flex items-start gap-3">
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconClass}`}><Icon className="h-5 w-5" /></span>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-blue-700">{label}</p>
-          <p className="mt-1 break-words text-xl font-bold leading-tight text-blue-700">{value}</p>
+          <p className={`mt-1 break-words text-xl font-bold leading-tight ${valueClass}`}>{value}</p>
           {sub && <p className="mt-1 text-xs text-slate-600">{sub}</p>}
         </div>
       </div>
@@ -703,9 +703,9 @@ export default function Records() {
       {/* ===== بطاقات الملخص ===== */}
       {data && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <SummaryCard label="إجمالي المبالغ" value={formatAmountFull(data.totalAmount)} />
+          <SummaryCard label="إجمالي المبالغ" value={formatAmountFull(data.totalAmount)} valueClass="text-green-700" />
           <SummaryCard label="عدد السندات" value={data.total.toLocaleString("ar-SA")} />
-          <SummaryCard label="متوسط السند" value={data.total > 0 ? formatAmountFull(data.totalAmount / data.total) : "—"} />
+          <SummaryCard label="متوسط السند" value={data.total > 0 ? formatAmountFull(data.totalAmount / data.total) : "—"} valueClass="text-green-700" />
           <SummaryCard label="الصفحة" value={`${rawData?.page ?? 1} / ${rawData?.totalPages || 1}`} sub={`${PAGE_SIZE} سجل في الصفحة`} />
         </div>
       )}
