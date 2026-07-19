@@ -8,7 +8,7 @@ import App from "./App";
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`).catch(() => {
       // Installation prompt remains available where the browser supports it.
     });
   });
