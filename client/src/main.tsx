@@ -8,7 +8,16 @@ import App from "./App";
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`).catch(() => {
+    // Remove workers/caches from older deployments before registering the
+    // current worker. This prevents a stale PWA shell from hiding new builds.
+    void navigator.serviceWorker.getRegistrations().then(async registrations => {
+      await Promise.all(registrations.map(registration => registration.unregister()));
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+      }
+      await navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`);
+    }).catch(() => {
       // Installation prompt remains available where the browser supports it.
     });
   });
