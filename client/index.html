@@ -25,13 +25,12 @@
   </head>
 
   <body>
-    <div id="root">
-      <div id="app-boot-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f6fa;color:#334155;font-family:Tajawal,Arial,sans-serif;text-align:center;padding:24px;direction:rtl">
-        <div>
-          <img src="/icon-192.png" alt="شعار سندات القبض" width="72" height="72" style="display:block;margin:0 auto 16px;border-radius:18px" />
-          <div style="font-size:18px;font-weight:700">جاري تحميل التطبيق…</div>
-          <div id="app-boot-message" style="font-size:13px;color:#64748b;margin-top:8px">يرجى الانتظار لحظات</div>
-        </div>
+    <div id="root"></div>
+    <div id="app-boot-screen" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#f5f6fa;color:#334155;font-family:Tajawal,Arial,sans-serif;text-align:center;padding:24px;direction:rtl">
+      <div>
+        <img src="/icon-192.png" alt="شعار سندات القبض" width="72" height="72" style="display:block;margin:0 auto 16px;border-radius:18px" />
+        <div style="font-size:18px;font-weight:700">جاري تحميل التطبيق…</div>
+        <div id="app-boot-message" style="font-size:13px;color:#64748b;margin-top:8px">يرجى الانتظار لحظات</div>
       </div>
     </div>
     <script>

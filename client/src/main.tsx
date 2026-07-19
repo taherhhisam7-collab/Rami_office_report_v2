@@ -102,6 +102,3 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
-
-// Tell the static boot screen that React has successfully mounted.
-window.__APP_BOOTED__ = true;

@@ -12,6 +12,7 @@ import BranchComparison from "./pages/BranchComparison";
 import GrowthReport from "./pages/GrowthReport";
 import { useAuth } from "./_core/hooks/useAuth";
 import InstallPrompt from "./components/InstallPrompt";
+import { useEffect } from "react";
 
 const OWNER_EMAIL = "taherhhisam7@gmail.com";
 const FULL_ACCESS_EMAILS = new Set([OWNER_EMAIL, "m.binzaqr@gmail.com"]);
@@ -42,6 +43,11 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    window.__APP_BOOTED__ = true;
+    document.getElementById("app-boot-screen")?.remove();
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
