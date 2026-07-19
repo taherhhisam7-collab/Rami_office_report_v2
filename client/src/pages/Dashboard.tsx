@@ -347,7 +347,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* توزيع طرق الدفع */}
-        <ChartCard title="توزيع طرق الدفع">
+        <ChartCard title="توزيع طرق الدفع" contentClassName="rounded-b-xl bg-white">
           {s.byPayment.length === 0 ? <EmptyChart /> : (
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
@@ -407,7 +407,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* أداء الموظفين */}
-        <ChartCard title="أداء الموظفين">
+        <ChartCard title="أداء الموظفين" contentClassName="rounded-b-xl bg-white">
           {s.byEmployee.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
               لا توجد بيانات موظفين في هذه الفترة
@@ -593,13 +593,13 @@ function StatCard({
   );
 }
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+function ChartCard({ title, children, contentClassName = "" }: { title: string; children: React.ReactNode; contentClassName?: string }) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-foreground">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
+      <CardContent className={`pt-0 ${contentClassName}`}>{children}</CardContent>
     </Card>
   );
 }
