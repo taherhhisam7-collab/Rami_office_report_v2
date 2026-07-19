@@ -288,7 +288,7 @@ export default function GrowthReport() {
             <CardTitle className="text-base">مساهمة كل فرع في الإيرادات</CardTitle>
             <p className="text-xs text-muted-foreground">حصة كل فرع من إجمالي إيرادات {data?.currentMonth ?? "الشهر المختار"}</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="rounded-b-xl bg-white">
             {donutData.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
