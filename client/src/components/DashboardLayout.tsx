@@ -241,7 +241,7 @@ function DashboardLayoutContent({
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${clearCacheMutation.isPending ? "animate-spin" : ""}`} />
-                  <span>تحديث البيانات</span>
+                  <span>مسح الكاش</span>
                 </button>
               </div>
             )}

@@ -25,7 +25,7 @@ import {
   type Filters,
   type MonthYear,
 } from "./sheetsClient";
-import { cashFlowBranches, getCashFlowData, syncCashMovementsToSheet } from "./cashFlow";
+import { cashFlowBranches, getCashFlowData } from "./cashFlow";
 
 const ARABIC_MONTHS_LIST = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -411,11 +411,11 @@ export const appRouter = router({
       .input(z.object({ monthYear: z.string().optional() }))
       .mutation(async ({ input }) => {
         const monthYear = input.monthYear ?? getCurrentMonthYear();
+        // Refresh is read-only: fetch the selected period from Google Sheets
+        // and update the local database. Do not write back to Google Sheets
+        // here because the service account is intentionally read-only.
         const result = await syncMonthFromGoogleSheets(monthYear);
-        const cashFlow = monthYear === getCurrentMonthYear()
-          ? await syncCashMovementsToSheet()
-          : null;
-        return { ...result, cashFlow };
+        return { ...result, cashFlow: null };
       }),
 
     /** One-time, rate-limited import for all archived Google Sheets tabs. */
