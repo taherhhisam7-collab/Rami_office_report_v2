@@ -45,10 +45,10 @@ const getBranchColor = (branch: string) => BRANCH_COLORS[branch] ?? DEFAULT_COLO
 function formatAmount(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "م";
   if (n >= 1_000) return (n / 1_000).toFixed(1) + "ك";
-  return n.toLocaleString("ar-SA");
+  return n.toLocaleString("en-US");
 }
 function formatAmountFull(n: number): string {
-  return n.toLocaleString("ar-SA", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " ر.س";
+  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " (ر.س)";
 }
 
 // ===== KPI Card =====

@@ -78,7 +78,7 @@ function getPeriodRange(period: Period, customStart?: string, customEnd?: string
 }
 
 function formatAmountFull(n: number): string {
-  return n.toLocaleString("ar-SA", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " ر.س";
+  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " (ر.س)";
 }
 
 function formatDate(ts: number): string {
@@ -380,7 +380,7 @@ export default function Reports() {
       {data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <SummaryBadge label="إجمالي المبالغ" value={formatAmountFull(data.totalAmount)} color="text-primary" />
-          <SummaryBadge label="عدد السندات" value={data.total.toLocaleString("ar-SA")} color="text-foreground" />
+          <SummaryBadge label="عدد السندات" value={data.total.toLocaleString("en-US")} color="text-foreground" />
           <SummaryBadge
             label="متوسط السند"
             value={data.total > 0 ? formatAmountFull(data.totalAmount / data.total) : "—"}
@@ -441,7 +441,7 @@ export default function Reports() {
                         <td className="py-2.5 px-3 font-medium max-w-[160px] truncate">{r.customerName}</td>
                         <td className="py-2.5 px-3 text-muted-foreground max-w-[140px] truncate text-xs">{r.service}</td>
                         <td className="py-2.5 px-3 font-semibold text-foreground whitespace-nowrap">
-                          {r.amount.toLocaleString("ar-SA")} ر.س
+                          {r.amount.toLocaleString("en-US")} (ر.س)
                         </td>
                         <td className="py-2.5 px-3">
                           <PaymentBadge method={r.paymentMethod} />

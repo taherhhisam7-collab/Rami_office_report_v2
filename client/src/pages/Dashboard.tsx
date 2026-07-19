@@ -156,11 +156,11 @@ function getPeriodRange(period: Period, customFrom?: string, customTo?: string):
 function formatAmount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}م`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}ك`;
-  return n.toLocaleString("ar-SA");
+  return n.toLocaleString("en-US");
 }
 
 function formatAmountFull(n: number): string {
-  return n.toLocaleString("ar-SA", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " ر.س";
+  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " (ر.س)";
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -357,7 +357,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="عدد السجلات"
-          value={s.totalCount.toLocaleString("ar-SA")}
+          value={s.totalCount.toLocaleString("en-US")}
           subtitle={`${s.byEmployee.length} موظف`}
           icon={<FileText className="h-5 w-5" />}
           gradient="from-amber-500 to-amber-600"
@@ -450,7 +450,7 @@ export default function Dashboard() {
                           </div>
                           <div className="shrink-0 text-left">
                             <p className="text-sm font-bold text-emerald-700">{formatAmountFull(service.total)}</p>
-                            <p className="text-xs text-slate-500">{service.count.toLocaleString("ar-SA")} سند</p>
+                            <p className="text-xs text-slate-500">{service.count.toLocaleString("en-US")} سند</p>
                           </div>
                         </div>
                         <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
@@ -491,7 +491,7 @@ export default function Dashboard() {
                           </div>
                           <div className="shrink-0 text-left">
                             <p className="text-sm font-bold text-emerald-700">{formatAmountFull(employee.total)}</p>
-                            <p className="text-xs text-slate-500">{employee.count.toLocaleString("ar-SA")} سند</p>
+                            <p className="text-xs text-slate-500">{employee.count.toLocaleString("en-US")} سند</p>
                           </div>
                         </div>
                         <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">

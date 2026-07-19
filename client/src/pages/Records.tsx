@@ -112,7 +112,7 @@ function getPeriodRange(period: Period, customStart?: string, customEnd?: string
 }
 
 function formatAmountFull(n: number) {
-  return n.toLocaleString("ar-SA", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " ر.س";
+  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " (ر.س)";
 }
 
 function exportToCSV(records: any[]) {
@@ -551,7 +551,7 @@ export default function Records() {
           <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
             <SlidersHorizontal className="h-3.5 w-3.5" />
             فلاتر متقدمة داخل رؤوس الجدول
-            {data && ` — ${data.total.toLocaleString("ar-SA")} سجل`}
+            {data && ` — ${data.total.toLocaleString("en-US")} سجل`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -704,7 +704,7 @@ export default function Records() {
       {data && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <SummaryCard label="إجمالي المبالغ" value={formatAmountFull(data.totalAmount)} valueClass="text-green-700" />
-          <SummaryCard label="عدد السندات" value={data.total.toLocaleString("ar-SA")} valueClass="text-green-700" />
+          <SummaryCard label="عدد السندات" value={data.total.toLocaleString("en-US")} valueClass="text-green-700" />
           <SummaryCard label="متوسط السند" value={data.total > 0 ? formatAmountFull(data.totalAmount / data.total) : "—"} valueClass="text-green-700" />
           <SummaryCard label="الصفحة" value={`${rawData?.page ?? 1} / ${rawData?.totalPages || 1}`} sub={`${PAGE_SIZE} سجل في الصفحة`} valueClass="text-green-700" />
         </div>
@@ -875,7 +875,7 @@ export default function Records() {
                         <td className="py-2.5 px-3"><BranchBadge branch={r.branch} /></td>
                         <td className="py-2.5 px-3 font-medium max-w-[160px] truncate">{r.customerName || "—"}</td>
                         <td className="py-2.5 px-3 text-muted-foreground text-xs max-w-[140px] truncate">{r.service || "—"}</td>
-                        <td className="py-2.5 px-3 font-semibold whitespace-nowrap">{r.amount.toLocaleString("ar-SA")} ر.س</td>
+                        <td className="py-2.5 px-3 font-semibold whitespace-nowrap">{r.amount.toLocaleString("en-US")} (ر.س)</td>
                         <td className="py-2.5 px-3"><PaymentBadge method={r.paymentMethod} /></td>
                         <td className="py-2.5 px-3 text-muted-foreground text-xs">{r.employee || "—"}</td>
                         <td className="py-2.5 px-3 text-muted-foreground text-xs max-w-[120px] truncate" title={r.notes ?? undefined}>{r.notes || "—"}</td>
@@ -889,7 +889,7 @@ export default function Records() {
               {rawData && rawData.totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                   <p className="text-xs text-muted-foreground">
-                    {((page - 1) * PAGE_SIZE) + 1} – {Math.min(page * PAGE_SIZE, rawData.total)} من {rawData.total.toLocaleString("ar-SA")} سجل
+                    {((page - 1) * PAGE_SIZE) + 1} – {Math.min(page * PAGE_SIZE, rawData.total)} من {rawData.total.toLocaleString("en-US")} سجل
                   </p>
                   <div className="flex items-center gap-1">
                     <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-8 w-8 p-0">

@@ -42,7 +42,7 @@ function comparisonRange(period: ComparisonPeriod, start: string, end: string) {
 function formatAmount(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}م`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}ك`;
-  return n.toLocaleString("ar-SA");
+  return n.toLocaleString("en-US");
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -54,7 +54,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <div key={p.name} className="flex items-center gap-2 text-muted-foreground">
           <span className="w-3 h-3 rounded-full inline-block" style={{ background: p.fill }} />
           <span>{p.name}:</span>
-          <span className="font-semibold text-foreground">{Number(p.value).toLocaleString("ar-SA")} ر.س</span>
+          <span className="font-semibold text-foreground">{Number(p.value).toLocaleString("en-US")} (ر.س)</span>
         </div>
       ))}
     </div>
@@ -186,8 +186,8 @@ export default function BranchComparison() {
                       <div>
                         <p className="text-xs text-muted-foreground">{data.comparisonLabel || data.currentMonth}</p>
                         <p className="text-xl font-bold text-foreground">
-                          {b.currentTotal.toLocaleString("ar-SA")}
-                          <span className="text-sm font-normal text-muted-foreground mr-1">ر.س</span>
+                          {b.currentTotal.toLocaleString("en-US")}
+                          <span className="text-sm font-normal text-muted-foreground mr-1">(ر.س)</span>
                         </p>
                         <p className="text-xs text-muted-foreground">{b.currentCount} سند</p>
                       </div>
@@ -196,8 +196,8 @@ export default function BranchComparison() {
                         <div className="pt-2 border-t border-border/50">
                           <p className="text-xs text-muted-foreground">{data.prevComparisonLabel || data.prevMonth}</p>
                           <p className="text-base font-semibold text-muted-foreground">
-                            {b.prevTotal.toLocaleString("ar-SA")}
-                            <span className="text-xs font-normal mr-1">ر.س</span>
+                            {b.prevTotal.toLocaleString("en-US")}
+                            <span className="text-xs font-normal mr-1">(ر.س)</span>
                           </p>
                           <p className="text-xs text-muted-foreground">{b.prevCount} سند</p>
                         </div>
@@ -214,7 +214,7 @@ export default function BranchComparison() {
                 <CardContent className="pt-5">
                   <p className="text-sm text-muted-foreground">{data.comparisonLabel || data.currentMonth} — الإجمالي</p>
                   <p className="text-2xl font-bold text-foreground mt-1">
-                    {data.totalCurrent.toLocaleString("ar-SA")} <span className="text-sm font-normal text-muted-foreground">ر.س</span>
+                    {data.totalCurrent.toLocaleString("en-US")} <span className="text-sm font-normal text-muted-foreground">(ر.س)</span>
                   </p>
                 </CardContent>
               </Card>
@@ -223,7 +223,7 @@ export default function BranchComparison() {
                   <CardContent className="pt-5">
                     <p className="text-sm text-muted-foreground">{data.prevComparisonLabel || data.prevMonth} — الإجمالي</p>
                     <p className="text-2xl font-bold text-foreground mt-1">
-                      {data.totalPrev.toLocaleString("ar-SA")} <span className="text-sm font-normal text-muted-foreground">ر.س</span>
+                      {data.totalPrev.toLocaleString("en-US")} <span className="text-sm font-normal text-muted-foreground">(ر.س)</span>
                     </p>
                   </CardContent>
                 </Card>
@@ -330,11 +330,11 @@ export default function BranchComparison() {
                               <span className="font-medium">{b.branch}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 font-semibold">{b.currentTotal.toLocaleString("ar-SA")}</td>
+                          <td className="py-3 px-4 font-semibold">{b.currentTotal.toLocaleString("en-US")}</td>
                           <td className="py-3 px-4 text-muted-foreground">{b.currentCount}</td>
                           {data.prevMonth && (
                             <>
-                              <td className="py-3 px-4 text-muted-foreground">{b.prevTotal.toLocaleString("ar-SA")}</td>
+                              <td className="py-3 px-4 text-muted-foreground">{b.prevTotal.toLocaleString("en-US")}</td>
                               <td className="py-3 px-4 text-muted-foreground">{b.prevCount}</td>
                               <td className="py-3 px-4">
                                 <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${
@@ -357,11 +357,11 @@ export default function BranchComparison() {
                   <tfoot>
                     <tr className="border-t-2 border-border font-bold text-foreground">
                       <td className="py-3 px-4">الإجمالي</td>
-                      <td className="py-3 px-4">{data.totalCurrent.toLocaleString("ar-SA")}</td>
+                      <td className="py-3 px-4">{data.totalCurrent.toLocaleString("en-US")}</td>
                       <td className="py-3 px-4">{data.comparison.reduce((s, b) => s + b.currentCount, 0)}</td>
                       {data.prevMonth && (
                         <>
-                          <td className="py-3 px-4">{data.totalPrev.toLocaleString("ar-SA")}</td>
+                          <td className="py-3 px-4">{data.totalPrev.toLocaleString("en-US")}</td>
                           <td className="py-3 px-4">{data.comparison.reduce((s, b) => s + b.prevCount, 0)}</td>
                           <td className="py-3 px-4">
                             {(() => {

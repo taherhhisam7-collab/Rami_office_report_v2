@@ -111,11 +111,11 @@ function getRange(period: Period, customStart: string, customEnd: string) {
 }
 
 function amount(value: number) {
-  return `${value.toLocaleString("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`;
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ر.س)`;
 }
 
 function wholeAmount(value: number) {
-  return `${Math.ceil(value).toLocaleString("ar-SA")} ر.س`;
+  return `${Math.ceil(value).toLocaleString("en-US")} (ر.س)`;
 }
 
 function branchIcon(branch: string) {

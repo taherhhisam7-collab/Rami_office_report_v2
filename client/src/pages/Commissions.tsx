@@ -37,7 +37,7 @@ function getCurrentArabicMonth(): string {
 
 function fmt(n: number): string {
   if (n === 0) return "0";
-  return n.toLocaleString("ar-SA", { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
 // ===== تصدير Excel =====
