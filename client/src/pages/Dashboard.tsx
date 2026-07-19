@@ -468,18 +468,20 @@ export default function Dashboard() {
               <BarChart
                 data={s.byEmployee.slice(0, 12).map((e, i) => ({ ...e, _colorIdx: i }))}
                 layout="vertical"
-                margin={{ top: 5, right: 90, left: 110, bottom: 5 }}
+                // Reserve room for Arabic names on the left and amount labels
+                // on the right so neither side is clipped on narrow cards.
+                margin={{ top: 8, right: 135, left: 185, bottom: 8 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                 <XAxis type="number" tickFormatter={formatAmountFull} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} />
                 <YAxis
                   type="category"
                   dataKey="key"
-                  width={130}
-                  tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827", fontWeight: 600 }}
+                  width={155}
+                  tick={{ fontSize: 12, fontFamily: "Tajawal", fill: "#111827", fontWeight: 600 }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(v: string) => v.length > 16 ? `${v.slice(0, 16)}…` : v}
+                  tickFormatter={(v: string) => v.length > 20 ? `${v.slice(0, 20)}…` : v}
                 />
                 <Tooltip
                   content={({ active, payload }) => {
