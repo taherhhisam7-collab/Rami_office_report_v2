@@ -11,20 +11,20 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "/manus-storage/icon-192_5ceeade9.png",
-      "sizes": "192x192",
+      "src": "/app-logo.png",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/manus-storage/icon-512_55027d09.png",
-      "sizes": "512x512",
+      "src": "/app-logo.png",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/manus-storage/apple-touch-icon_16fdfd44.png",
-      "sizes": "180x180",
+      "src": "/app-logo.png",
+      "sizes": "any",
       "type": "image/png"
     }
   ]

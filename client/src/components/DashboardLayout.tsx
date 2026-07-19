@@ -180,13 +180,16 @@ function DashboardLayoutContent({
                 <PanelRight className="h-4 w-4 text-sidebar-foreground/60" />
               </button>
               {!isCollapsed && (
-                <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <img src="/app-logo.png" alt="شعار سندات القبض" className="h-9 w-9 rounded-lg bg-white object-contain" />
+                  <div className="flex flex-col min-w-0">
                   <span className="font-bold text-sidebar-foreground text-sm truncate">
                     سندات القبض
                   </span>
                   <span className="text-xs text-sidebar-foreground/50 truncate">
                     نظام إدارة الفروع
                   </span>
+                  </div>
                 </div>
               )}
             </div>
