@@ -12,6 +12,7 @@ import BranchComparison from "./pages/BranchComparison";
 import GrowthReport from "./pages/GrowthReport";
 import Commissions from "./pages/Commissions";
 import { useAuth } from "./_core/hooks/useAuth";
+import InstallPrompt from "./components/InstallPrompt";
 
 const OWNER_EMAIL = "taherhhisam7@gmail.com";
 
@@ -56,6 +57,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster position="top-center" richColors />
+          <InstallPrompt />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

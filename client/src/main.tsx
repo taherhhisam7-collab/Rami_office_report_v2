@@ -5,6 +5,14 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
+
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Installation prompt remains available where the browser supports it.
+    });
+  });
+}
 import { getLoginUrl } from "./const";
 import "./index.css";
 
