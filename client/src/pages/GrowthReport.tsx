@@ -351,7 +351,8 @@ export default function GrowthReport() {
           </CardHeader>
           <CardContent className="rounded-b-xl bg-white">
             {donutData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={240}>
+              <div className="space-y-2">
+              <ResponsiveContainer width="100%" height={210}>
                 <PieChart>
                   <Pie
                     data={donutData}
@@ -362,7 +363,7 @@ export default function GrowthReport() {
                     paddingAngle={3}
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={false}
                     labelLine={false}
                   >
                     {donutData.map((entry, i) => (
@@ -370,11 +371,17 @@ export default function GrowthReport() {
                     ))}
                   </Pie>
                   <Tooltip formatter={(v: number) => formatAmountFull(v)} />
-                  <Legend
-                    formatter={(value) => <span style={{ fontFamily: "Tajawal", fontSize: 12 }}>{value}</span>}
-                  />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-2 px-2 pb-1">
+                {donutData.map((entry) => (
+                  <div key={entry.name} className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-800"><span className="h-2.5 w-2.5 rounded-full" style={{ background: entry.color }} />{entry.name}</span>
+                    <span className="text-slate-700">{formatAmount(entry.value)}</span>
+                  </div>
+                ))}
+              </div>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">لا توجد بيانات</div>
             )}

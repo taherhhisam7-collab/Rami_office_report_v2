@@ -435,14 +435,14 @@ export default function Dashboard() {
               <BarChart
                 data={s.byService.slice(0, 10)}
                 layout="vertical"
-                margin={{ top: 5, right: 15, left: 10, bottom: 5 }}
+                margin={{ top: 8, right: 20, left: 105, bottom: 8 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                 <XAxis type="number" tickFormatter={formatAmount} tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }} />
                 <YAxis
                   type="category"
                   dataKey="key"
-                  width={130}
+                  width={150}
                   tick={{ fontSize: 11, fontFamily: "Tajawal", fill: "#111827" }}
                   tickFormatter={(v) => v.length > 18 ? v.slice(0, 18) + "…" : v}
                 />

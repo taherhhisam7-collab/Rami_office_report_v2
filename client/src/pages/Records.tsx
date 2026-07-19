@@ -152,8 +152,8 @@ function SummaryCard({ label, value, sub, icon: Icon = Banknote, iconClass = "bg
       <div className="flex items-start gap-3">
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconClass}`}><Icon className="h-5 w-5" /></span>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-700">{label}</p>
-          <p className="mt-1 break-words text-xl font-bold leading-tight text-slate-950">{value}</p>
+          <p className="text-sm font-semibold text-blue-700">{label}</p>
+          <p className="mt-1 break-words text-xl font-bold leading-tight text-blue-700">{value}</p>
           {sub && <p className="mt-1 text-xs text-slate-600">{sub}</p>}
         </div>
       </div>
