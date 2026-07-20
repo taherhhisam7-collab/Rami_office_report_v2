@@ -73,16 +73,55 @@ function isCashPayment(value: string) {
   return /\u0643\u0627\u0634|\u0646\u0642\u062f/.test(normalized);
 }
 
-function parseAmount(value: unknown): number {
-  const raw = String(value ?? "").trim();
+export function parseCashFlowAmount(value: unknown): number {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+
+  let raw = String(value ?? "").trim();
   if (!raw) return 0;
-  const normalized = raw
+
+  const isParenthesizedNegative = /^\(.*\)$/.test(raw);
+  raw = raw
     .replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
     .replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
-    .replace(/[,،\sر.س]/g, "")
-    .replace(/[^0-9.-]/g, "");
-  const amount = Number(normalized);
-  return Number.isFinite(amount) ? amount : 0;
+    .replace(/٬/g, ",")
+    .replace(/٫/g, ".")
+    .replace(/[^0-9,.\-]/g, "")
+    .replace(/^[,.]+|[,.]+$/g, "");
+
+  const lastComma = raw.lastIndexOf(",");
+  const lastDot = raw.lastIndexOf(".");
+  if (lastComma >= 0 && lastDot >= 0) {
+    const decimalSeparator = lastComma > lastDot ? "," : ".";
+    const thousandsSeparator = decimalSeparator === "," ? "." : ",";
+    raw = raw.replaceAll(thousandsSeparator, "");
+    raw = raw.replaceAll(decimalSeparator, ".");
+  } else {
+    const separator = lastComma >= 0 ? "," : lastDot >= 0 ? "." : "";
+    if (separator) {
+      const parts = raw.split(separator);
+      const decimalDigits = parts.at(-1)?.replace(/\D/g, "").length ?? 0;
+      if (parts.length === 2 && decimalDigits > 0 && decimalDigits <= 2) {
+        raw = `${parts[0]}.${parts[1]}`;
+      } else if (parts.length > 2 && decimalDigits > 0 && decimalDigits <= 2) {
+        raw = `${parts.slice(0, -1).join("")}.${parts.at(-1)}`;
+      } else {
+        raw = parts.join("");
+      }
+    }
+  }
+
+  const amount = Number(raw);
+  if (!Number.isFinite(amount)) return 0;
+  return isParenthesizedNegative ? -Math.abs(amount) : amount;
+}
+
+export function getLastCashFlowBalance(rows: unknown[][]): number {
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    const row = rows[index] ?? [];
+    const isCreatedRow = row.some(value => String(value ?? "").trim() !== "");
+    if (isCreatedRow) return parseCashFlowAmount(row[4]);
+  }
+  return 0;
 }
 
 function parseDate(value: unknown): { label: string; ts: number } | null {
@@ -115,8 +154,9 @@ export async function getCashFlowData(filters: CashFlowFilters = {}): Promise<Ca
         dateTimeRenderOption: "FORMATTED_STRING",
       });
 
+      const sheetRows = response.data.values ?? [];
       const parsedRows: CashFlowRow[] = [];
-      for (const [index, row] of (response.data.values ?? []).entries()) {
+      for (const [index, row] of sheetRows.entries()) {
         const parsedDate = parseDate(row[0]);
         if (!parsedDate) continue;
         parsedRows.push({
@@ -125,17 +165,21 @@ export async function getCashFlowData(filters: CashFlowFilters = {}): Promise<Ca
           date: parsedDate.label,
           dateTs: parsedDate.ts,
           description: String(row[1] ?? "").trim(),
-          expense: parseAmount(row[2]),
-          income: parseAmount(row[3]),
-          balance: parseAmount(row[4]),
+          expense: parseCashFlowAmount(row[2]),
+          income: parseCashFlowAmount(row[3]),
+          balance: parseCashFlowAmount(row[4]),
         });
       }
 
-      return parsedRows;
+      return {
+        branch,
+        rows: parsedRows,
+        latestBalance: getLastCashFlowBalance(sheetRows),
+      };
     })
   );
 
-  const dateRows: CashFlowRow[] = responses.flat().filter((row): row is CashFlowRow =>
+  const dateRows: CashFlowRow[] = responses.flatMap(response => response.rows).filter((row): row is CashFlowRow =>
     (filters.startTs === undefined || row.dateTs >= filters.startTs) &&
     (filters.endTs === undefined || row.dateTs <= filters.endTs)
   );
@@ -147,14 +191,12 @@ export async function getCashFlowData(filters: CashFlowFilters = {}): Promise<Ca
   }
 
   rows.sort((a, b) => b.dateTs - a.dateTs || a.id.localeCompare(b.id));
-  // بطاقات الرصيد تعرض آخر رصيد فعلي دائمًا، ولا تتأثر بفلاتر جدول الحركات.
-  const balanceRows: CashFlowRow[] = responses.flat();
-  const balances = CASH_FLOW_BRANCHES.map(({ branch }) => {
-    const branchRows: CashFlowRow[] = balanceRows
-      .filter((row): row is CashFlowRow => row.branch === branch)
-      .sort((a, b) => b.dateTs - a.dateTs || a.id.localeCompare(b.id));
-    return { branch, balance: branchRows[0]?.balance ?? 0 };
-  });
+  // The balance cards mirror column F in the final created sheet row.
+  // They must not depend on date sorting or the table filters.
+  const balances = responses.map(({ branch, latestBalance }) => ({
+    branch,
+    balance: latestBalance,
+  }));
 
   return {
     rows,
@@ -197,7 +239,7 @@ export async function syncCashMovementsToSheet() {
       .map((row, index) => ({ row, index }))
       .filter(({ row }) => String(row[0] ?? "").trim())
       .at(-1)?.row[4];
-    let balance = parseAmount(nextBalance);
+    let balance = parseCashFlowAmount(nextBalance);
     let added = 0;
 
     for (const record of cashRecords) {
