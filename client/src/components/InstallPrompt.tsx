@@ -35,7 +35,14 @@ export default function InstallPrompt() {
     window.addEventListener("appinstalled", onInstalled);
 
     // iOS Safari and some desktop browsers do not expose beforeinstallprompt.
-    const timer = window.setTimeout(() => setVisible(true), 1800);
+    // Only show the fallback prompt if the user is already authenticated
+    // (i.e. the app has fully booted) to avoid blocking the login screen.
+    const timer = window.setTimeout(() => {
+      if (window.__APP_BOOTED__) {
+        setVisible(true);
+      }
+    }, 3000);
+
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);

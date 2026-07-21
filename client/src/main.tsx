@@ -33,6 +33,9 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
 // This avoids asking anyone to hard-refresh after a Render deployment.
 async function reloadWhenNewBuildIsAvailable() {
   if (!import.meta.env.PROD) return;
+  // Do not reload before the app has fully booted — avoids reload loops on
+  // slow connections (e.g. iPhone Chrome on mobile data).
+  if (!window.__APP_BOOTED__) return;
 
   try {
     const response = await fetch("/", { cache: "no-store" });
@@ -55,7 +58,7 @@ async function reloadWhenNewBuildIsAvailable() {
 }
 
 if (import.meta.env.PROD) {
-  window.setTimeout(() => void reloadWhenNewBuildIsAvailable(), 3_000);
+  window.setTimeout(() => void reloadWhenNewBuildIsAvailable(), 15_000);
   window.setInterval(() => void reloadWhenNewBuildIsAvailable(), 5 * 60_000);
 }
 import { getLoginUrl } from "./const";
